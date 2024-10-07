@@ -1,0 +1,16 @@
+.DS_Store
+node_modules
+/build
+/.svelte-kit
+/package
+.env
+.env.*
+*.app
+*.pkg
+tmp.json
+package-lock.json
+embedded.provisionprofile
+
+/src-tauri/target
+/src-tauri/WixTools
+/src-tauri/appdata
