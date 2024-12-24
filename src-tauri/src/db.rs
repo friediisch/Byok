@@ -31,7 +31,7 @@ lazy_static! {
 		},
 		Model {
 			provider_name: "anthropic".to_string(),
-			model_name: "claude-3-5-sonnet-20240620".to_string(),
+			model_name: "claude-3-5-sonnet-latest".to_string(),
 			model_display_name: "Claude".to_string(),
 			show: true,
 			max_tokens: 8192,
