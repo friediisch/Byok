@@ -65,21 +65,11 @@ pub async fn send_anthropic_message(body: Value, api_key: &str) -> Result<String
 		function_call_behavior: None,
 	};
 
-	let claude = Claude::default()
-		.with_api_key(api_key)
-		.with_options(call_options);
-	let messages = body["messages"]
-		.as_array()
-		.ok_or_else(|| anyhow::anyhow!("Missing 'messages' array"))?;
+	let claude = Claude::default().with_api_key(api_key).with_options(call_options);
+	let messages = body["messages"].as_array().ok_or_else(|| anyhow::anyhow!("Missing 'messages' array"))?;
 	let history: String = messages
 		.iter()
-		.map(|msg| {
-			format!(
-				"{}: {}",
-				msg["role"].as_str().unwrap_or(""),
-				msg["content"].as_str().unwrap_or("")
-			)
-		})
+		.map(|msg| format!("{}: {}", msg["role"].as_str().unwrap_or(""), msg["content"].as_str().unwrap_or("")))
 		.collect::<Vec<String>>()
 		.join("\n");
 

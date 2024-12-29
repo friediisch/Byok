@@ -1,16 +1,26 @@
 #![cfg_attr(all(not(debug_assertions), target_os = "windows"), windows_subsystem = "windows")]
 
-use crate::data::{AppPaths, ArcData, Data};
+use dotenv::dotenv;
+use log;
 use tauri::api::{dialog, shell};
 #[cfg(target_os = "macos")]
 use tauri::AboutMetadata;
 use tauri::{command, CustomMenuItem, Manager, Menu, MenuEntry, MenuItem, Submenu, Window, WindowBuilder, WindowUrl};
+// use tracing::{debug, error, info, warn};
+// use tracing_subscriber::{fmt, EnvFilter};
+// use tauri_plugin_log::{Target, TargetKind};
+
+use crate::data::{AppPaths, ArcData, Data};
 
 mod data;
 mod db;
+mod llm_providers;
 mod providers;
 mod settings;
+mod types;
 mod utils;
+
+use env_logger::{Builder, Env};
 
 fn error_popup_main_thread(msg: impl AsRef<str>) {
 	let msg = msg.as_ref().to_string();
@@ -41,6 +51,32 @@ fn error_popup(msg: String, win: Window) {
 
 #[tokio::main]
 async fn main() {
+	dotenv().ok(); // Load .env file
+				// Builder::new()
+				// 	.filter_level(log::LevelFilter::Debug)
+				// 	.filter_module("sqlx", log::LevelFilter::Warn)
+				// 	.init();
+
+	// if cfg!(debug_assertions) {
+	// 	tracing_subscriber::fmt()
+	// 		.pretty() // Human-readable logs in development
+	// 		.with_env_filter(EnvFilter::new("debug")) // Use RUST_LOG for filtering
+	// 		.init();
+	// 	debug!("Logging initialized in development mode 1.");
+	// 	println!("Logging initialized in development mode 2.");
+	// } else {
+	// 	tracing_subscriber::fmt()
+	// 		.json() // Structured logs in production
+	// 		.with_env_filter(EnvFilter::new("warn")) // Default to WARN level
+	// 		.with_ansi(false) // No ANSI colors in production
+	// 		.init();
+	// 	info!("Logging initialized in production mode 1.");
+	// 	println!("Logging initialized in production mode 2.");
+	// }
+
+	// env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
+	env_logger::init();
+
 	#[cfg(debug_assertions)]
 	{
 		tauri_specta::ts::export(

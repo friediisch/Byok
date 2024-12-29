@@ -1,44 +1,14 @@
 use regex::Regex;
-use serde::{Deserialize, Serialize};
-use specta::Type;
-use sqlx::FromRow;
-use std::fmt;
 use syntect::easy::HighlightLines;
 use syntect::highlighting::{Style, ThemeSet};
 use syntect::html::{styled_line_to_highlighted_html, IncludeBackground};
 use syntect::parsing::SyntaxSet;
 use syntect::util::LinesWithEndings;
 
-#[derive(Serialize, Deserialize, Debug, FromRow, Type, Clone)]
-pub struct MessageBlock {
-	pub id: Option<i32>,
-	pub type_: String,
-	pub language: Option<String>,
-	pub raw_content: String,
-	pub rendered_content: String,
-	pub copied: Option<bool>,
-}
-
-impl fmt::Display for MessageBlock {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		match &self.language {
-			Some(lang) => write!(
-				f,
-				"{{\"type\": \"{}\", \"language\": \"{}\", \"content\": \"{}\"}}",
-				self.type_, lang, self.rendered_content
-			),
-			None => write!(f, "{{\"type\": \"{}\", \"content\": \"{}\"}}", self.type_, self.rendered_content),
-		}
-	}
-}
-
-#[derive(Serialize, Deserialize, Debug, Type)]
-pub struct MessageBlocks {
-	pub blocks: Vec<MessageBlock>,
-}
+use crate::types::{MessageBlock, MessageBlocks};
 
 pub async fn render_message(message: &str, code_theme: &str) -> MessageBlocks {
-	let mut message_blocks: MessageBlocks = MessageBlocks { blocks: vec![] };
+	let mut message_blocks: MessageBlocks = MessageBlocks(vec![]);
 	let regex = Regex::new(r"```([a-zA-Z]*\n[\s\S]*?)```").unwrap();
 	let mut last_index = 0;
 
@@ -51,7 +21,7 @@ pub async fn render_message(message: &str, code_theme: &str) -> MessageBlocks {
 		if offset > last_index {
 			let raw_content = message[last_index..offset].trim().to_string();
 			let rendered_content = process_text(raw_content.clone());
-			message_blocks.blocks.push(MessageBlock {
+			message_blocks.0.push(MessageBlock {
 				id: None,
 				type_: "text".to_string(),
 				language: None,
@@ -76,7 +46,7 @@ pub async fn render_message(message: &str, code_theme: &str) -> MessageBlocks {
 		};
 
 		// Add the code block
-		message_blocks.blocks.push(MessageBlock {
+		message_blocks.push(MessageBlock {
 			id: None,
 			type_: "code".to_string(),
 			language: Some(language),
@@ -93,7 +63,7 @@ pub async fn render_message(message: &str, code_theme: &str) -> MessageBlocks {
 	if last_index < message.len() {
 		let raw_content = message[last_index..].trim().to_string();
 		let rendered_content = process_text(raw_content.clone());
-		message_blocks.blocks.push(MessageBlock {
+		message_blocks.push(MessageBlock {
 			id: None,
 			type_: "text".to_string(),
 			language: None,

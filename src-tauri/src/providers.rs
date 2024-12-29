@@ -1,8 +1,8 @@
-// use std::io::{stdout, Write};
-// use futures::StreamExt;
-// use langchain_rust::language_models::llm::{self, LLM};
-// use candle_transformers::models::whisper::model;
-use crate::db::get_api_key;
+pub mod anthropic;
+pub mod groqcloud;
+pub mod mistralai;
+pub mod openai;
+
 use langchain_rust::language_models::llm::LLM;
 use langchain_rust::llm::OpenAIConfig;
 use langchain_rust::memory::SimpleMemory;
@@ -15,19 +15,15 @@ use specta::Type;
 use sqlx::prelude::FromRow;
 use tauri::command;
 
-// use crate::schemas::{memory::BaseMemory, messages::Message};
+use self::{anthropic::send_anthropic_message, groqcloud::send_groqcloud_message, mistralai::send_mistralai_message, openai::send_openai_message};
+use crate::db::get_api_key;
+use crate::llm_providers::{LLMConfig, LLMProvider, OpenAIProvider};
 use crate::{
 	data::DataState,
-	db::{get_chat_display_name, get_messages, insert_chat_display_name, insert_message, insert_message_blocks, Message, MessageHistory},
-	utils::{render_message, MessageBlocks},
+	db::{get_chat_display_name, get_messages, insert_chat_display_name, insert_message, insert_message_blocks},
+	types::{Message, MessageBlocks, MessageHistory},
+	utils::render_message,
 };
-
-use self::{anthropic::send_anthropic_message, groqcloud::send_groqcloud_message, mistralai::send_mistralai_message, openai::send_openai_message};
-
-pub mod anthropic;
-pub mod groqcloud;
-pub mod mistralai;
-pub mod openai;
 
 #[derive(Serialize, Deserialize, Clone, Debug, FromRow, Type)]
 pub struct ProviderData {
@@ -83,14 +79,14 @@ pub async fn get_message(msg: String, chat_id: String, provider_name: String, mo
 	messages = match get_messages(&chat_id, data.clone()).await {
 		Ok(messages) => messages,
 		Err(e) => {
-			return Err(e);
+			return Err(e.to_string());
 		}
 	};
 
 	// let prompt_args
 	let mut memory = SimpleMemory::new();
 	//for message in messages.messages.iter().take(messages.messages.len() - 1) {
-	for message in messages.messages.iter().take(messages.messages.len()) {
+	for message in messages.iter().take(messages.len()) {
 		memory.add_message({
 			match message.role.as_str() {
 				"user" => LangChainMessage::new_human_message(message.content.clone()),
@@ -121,64 +117,11 @@ pub async fn get_message(msg: String, chat_id: String, provider_name: String, mo
 		function_call_behavior: None,
 	};
 
-	let answer: String = match provider_name.as_str() {
-		"openai" => {
-			let openai = OpenAI::default()
-				.with_config(OpenAIConfig::default().with_api_key(&api_key))
-				.with_options(call_options);
-			let history = openai.messages_to_string(&memory.messages());
-			openai.invoke(&history).await.unwrap()
-		}
-		"anthropic" => {
-			let claude = Claude::default().with_api_key(&api_key).with_options(call_options);
-			let history = claude.messages_to_string(&memory.messages());
-			match claude.invoke(&history).await {
-				Ok(response) => response,
-				Err(e) => {
-					if let Some(_error_message) = e.to_string().to_lowercase().find("authentication") {
-						eprintln!("Authentication error with Claude: {}", e);
-						"Error: Invalid API key or authentication failed.".to_string()
-					} else {
-						eprintln!("Error invoking Claude: {}", e);
-						format!("An error occurred: {}", e)
-					}
-				}
-			}
-		}
-		"mistralai" => {
-			let body: Value = json!({
-				"model": &model_name,
-				"messages": messages.render("openai"),
-				"temperature": 0.7,
-				"max_tokens": 4096
-			});
-			match send_mistralai_message(body, &api_key).await {
-				Ok(llm_answer) => llm_answer,
-				Err(e) => {
-					eprintln!("Error sending message to Mistral: {}", e);
-					e.to_string()
-				}
-			}
-		}
-		"groqcloud" => {
-			let body: Value = json!({
-				"model": &model_name,
-				"messages": messages.render("openai"),
-				"temperature": 0.7,
-				"max_tokens": 4096
-			});
-			match send_groqcloud_message(body, &api_key).await {
-				Ok(llm_answer) => llm_answer,
-				Err(e) => {
-					eprintln!("Error sending message to Groq: {}", e);
-					e.to_string()
-				}
-			}
-		}
-		_ => {
-			format!("Provider {provider_name} not implemented")
-		}
-	};
+	let llm_config = LLMConfig::default();
+
+	let llm: LLMProvider = LLMProvider::new(&provider_name, api_key);
+
+	let answer: String = llm.send_message(&messages, &model_name, &llm_config).await.unwrap();
 
 	let new_answer_id = uuid::Uuid::new_v4().to_string();
 	insert_message(&new_answer_id, "assistant", &answer, &chat_id, &model_name, data.clone()).await;
@@ -196,92 +139,21 @@ pub async fn get_message(msg: String, chat_id: String, provider_name: String, mo
 		Ok(Some((display_name,))) => {
 			match display_name.starts_with("unnamed_new_chat_") {
 				true => {
-					let display_name_messages: MessageHistory = MessageHistory {
-						messages: vec![Message {
-							id: "none".to_string(),
-							role: "user".to_string(),
-							content: format!(
-								"Please respond with the topic of the thread for these two messages:
+					let display_name_messages: MessageHistory = MessageHistory(vec![Message {
+						id: "none".to_string(),
+						role: "user".to_string(),
+						content: format!(
+							"Please respond with the topic of the thread for these two messages:
 								'user': '{msg}',
 								'assistant': '{answer}'
 								Your response will be used to name the chat, therefore omit any other content from your response, keep it short and use the language used in the prompt.
 								Do not use quotation marks. Capitalize the first letter of your answer."
-							),
-							model_name: "".into(),
-							blocks: None,
-						}],
-					};
+						),
+						model_name: "".into(),
+						blocks: None,
+					}]);
 
-					let new_chat_display_name: String;
-					match provider_name.as_str() {
-						"openai" => {
-							let body = json!({
-								"model": &model_name,
-								"messages": display_name_messages.render("openai"),
-								"temperature": 0.7,
-								"max_tokens": &MAX_DISPLAY_NAME_LENGTH,
-							});
-							new_chat_display_name = match send_openai_message(body, &api_key).await {
-								Ok(llm_answer) => llm_answer,
-								Err(e) => {
-									let llm_answer = format!("Error fetching chat name from OpenAI: {}", e);
-									eprintln!("{}", &llm_answer);
-									return Ok(llm_answer);
-								}
-							}
-						}
-						"anthropic" => {
-							let body = json!({
-								"model": &model_name,
-								"max_tokens": &MAX_DISPLAY_NAME_LENGTH,
-								"messages": display_name_messages.render("anthropic"),
-							});
-							new_chat_display_name = match send_anthropic_message(body, &api_key).await {
-								Ok(llm_answer) => llm_answer,
-								Err(e) => {
-									let llm_answer = format!("Error fetching chat name from Anthropic: {}", e);
-									eprintln!("{}", &llm_answer);
-									return Ok(llm_answer);
-								}
-							}
-						}
-						"mistralai" => {
-							let body = json!({
-								"model": &model_name,
-								"messages": display_name_messages.render("openai"),
-								"temperature": 0.7,
-								"max_tokens": &MAX_DISPLAY_NAME_LENGTH,
-							});
-							new_chat_display_name = match send_mistralai_message(body, &api_key).await {
-								Ok(llm_answer) => llm_answer,
-								Err(e) => {
-									let llm_answer = format!("Error fetching chat name from Mistral: {}", e);
-									eprintln!("{}", &llm_answer);
-									return Ok(llm_answer);
-								}
-							}
-						}
-						"groqcloud" => {
-							let body = json!({
-								"model": &model_name,
-								"messages": display_name_messages.render("openai"),
-								"temperature": 0.7,
-								"max_tokens": &MAX_DISPLAY_NAME_LENGTH,
-							});
-							new_chat_display_name = match send_groqcloud_message(body, &api_key).await {
-								Ok(answer) => answer,
-								Err(e) => {
-									let llm_answer = format!("Error fetching chat name from Groq: {}", e);
-									eprintln!("{}", &llm_answer);
-									return Ok(llm_answer);
-								}
-							}
-						}
-						// "local" => {
-						// 	new_chat_display_name = truncate_string(&chat_id, 10).to_string()
-						// }
-						_ => new_chat_display_name = "Error fetching chat name".to_string(),
-					}
+					let new_chat_display_name: String = llm.send_message(&display_name_messages, &model_name, &llm_config).await.unwrap();
 					// let data = data.0.lock().await;
 					// update the display_name field in the chats database
 					let update_chat_display_name_query: &str = "UPDATE chats SET display_name = $1 WHERE id = $2";

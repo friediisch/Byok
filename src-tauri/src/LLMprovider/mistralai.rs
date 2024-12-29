@@ -53,24 +53,11 @@ pub async fn send_mistralai_message(body: Value, api_key: &str) -> Result<String
 	{
 		Ok(response) => {
 			let response_text: String = response.text().await.map_err(|err| err.to_string())?;
-			if let Ok(parsed_response) =
-				serde_json::from_str::<MistralChatCompletionResponse>(&response_text)
-			{
-				let answer: String = parsed_response
-					.choices
-					.get(0)
-					.ok_or("No response".to_string())?
-					.message
-					.content
-					.clone();
+			if let Ok(parsed_response) = serde_json::from_str::<MistralChatCompletionResponse>(&response_text) {
+				let answer: String = parsed_response.choices.get(0).ok_or("No response".to_string())?.message.content.clone();
 				Ok(answer)
-			} else if let Ok(error_response) =
-				serde_json::from_str::<MistralErrorResponse>(&response_text)
-			{
-				eprintln!(
-					"Error from Mistral API: {} (Request ID: {})",
-					error_response.message, error_response.request_id
-				);
+			} else if let Ok(error_response) = serde_json::from_str::<MistralErrorResponse>(&response_text) {
+				eprintln!("Error from Mistral API: {} (Request ID: {})", error_response.message, error_response.request_id);
 				Err(anyhow!("Error from Mistral API: {}", error_response.message).into())
 			} else {
 				eprintln!("Unexpected response from Mistral API: {}", response_text);

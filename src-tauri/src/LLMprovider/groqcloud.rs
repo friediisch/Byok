@@ -55,16 +55,9 @@ pub async fn send_groqcloud_message(body: Value, api_key: &str) -> Result<String
 
 	let response_text: String = response.text().await.map_err(|err| err.to_string())?;
 
-	let parsed_response: GroqChatCompletionResponse =
-		serde_json::from_str(&response_text).map_err(|err| err.to_string())?;
+	let parsed_response: GroqChatCompletionResponse = serde_json::from_str(&response_text).map_err(|err| err.to_string())?;
 
-	let answer: String = parsed_response
-		.choices
-		.get(0)
-		.ok_or("No response".to_string())?
-		.message
-		.content
-		.clone();
+	let answer: String = parsed_response.choices.get(0).ok_or("No response".to_string())?.message.content.clone();
 
 	Ok(answer)
 }

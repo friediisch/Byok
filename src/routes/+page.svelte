@@ -9,7 +9,7 @@
 	import { type Event as TauriEvent, listen } from '@tauri-apps/api/event'
 	import { availableModelsStore, availableProvidersStore } from '$lib/stores'
 
-	let chats: c.Chats = { chats: [] }
+	let chats: c.Chats = []
 	let currentChatMessages: c.Message[]
 	$: currentChatMessages = []
 	let selectedChatId: string
@@ -33,14 +33,14 @@
 		availableModelsStore.set(await c.getModels())
 		settings = await c.getSettings()
 		availableProvidersStore.set(await c.loadProviders())
-		if (settings.default_model in $availableModelsStore.models) {
-			selectedModel = $availableModelsStore.models.find(
+		if (settings.default_model in $availableModelsStore) {
+			selectedModel = $availableModelsStore.find(
 				(model) =>
 					model.model_name == settings.default_model &&
 					model.provider_name == settings.default_provider,
 			)!
 		} else {
-			selectedModel = $availableModelsStore.models[0]
+			selectedModel = $availableModelsStore[0]
 		}
 		selectedModelName = selectedModel.model_name
 		newChat()
@@ -112,7 +112,7 @@
 		}
 		scrollToBottom()
 		let offset = currentChatMessages[currentChatMessages.length - 1]?.role === 'animate' ? 2 : 1
-		selectedModel = $availableModelsStore.models.find(
+		selectedModel = $availableModelsStore.find(
 			(model) =>
 				model.model_name == currentChatMessages[currentChatMessages.length - offset]?.model_name,
 		)!
@@ -176,7 +176,7 @@
 				/>
 			</div>
 
-			{#each chats.chats as chat}
+			{#each chats as chat}
 				<div
 					class="block p-2 mx-2 rounded-md group
 					{chat.id === selectedChatId ? 'bg-gray-600' : 'hover:bg-gray-800'}"
@@ -265,7 +265,7 @@
 										showContextMenu = false
 										c.archiveChat(chat.id)
 										chats = await c.getChats()
-										frontendLoadChat(chats.chats[0].id)
+										frontendLoadChat(chats[0].id)
 									}}
 									role="button"
 									aria-pressed="false"
@@ -279,7 +279,7 @@
 										showContextMenu = false
 										c.deleteChat(chat.id)
 										chats = await c.getChats()
-										frontendLoadChat(chats.chats[0].id)
+										frontendLoadChat(chats[0].id)
 									}}
 									role="button"
 									aria-pressed="false"
@@ -324,10 +324,10 @@
 					style="max-height: 80%;"
 				>
 					{#each $availableProvidersStore as provider}
-						{#if $availableModelsStore.models.filter((model) => model.provider_name == provider.provider_name).length > 0}
+						{#if $availableModelsStore.filter((model) => model.provider_name == provider.provider_name).length > 0}
 							<div class="font-bold">{provider.display_name}</div>
 							<hr class="border-gray-600 pb-1" />
-							{#each $availableModelsStore.models.filter((model) => model.provider_name == provider.provider_name) as model}
+							{#each $availableModelsStore.filter((model) => model.provider_name == provider.provider_name) as model}
 								<div
 									class="block p-2 mx-2 hover:bg-gray-600 rounded-md"
 									class:bg-white={selectedModel == model}
@@ -378,10 +378,9 @@
 						{:else}
 							<div class="relative p-1 min-w-fit h-fit whitespace-nowrap group">
 								<div id="display_name" class="font-bold text-gradient rounded-md relative">
-									{$availableModelsStore.models.find(
-										(model) => model.model_name == message.model_name,
-									)?.model_display_name ||
-										$availableModelsStore.models.find((model) => model == selectedModel)
+									{$availableModelsStore.find((model) => model.model_name == message.model_name)
+										?.model_display_name ||
+										$availableModelsStore.find((model) => model == selectedModel)
 											?.model_display_name}
 								</div>
 								<div
@@ -389,11 +388,9 @@
 									class="absolute top-1 left-0 opacity-0 transition-opacity duration-150 ease-in-out z-10 inset-0 w-fit pointer-events-none"
 								>
 									<div class="bg-white text-gray-800 px-1 rounded-md">
-										{$availableModelsStore.models.find(
-											(model) => model.model_name == message.model_name,
-										)?.model_name ||
-											$availableModelsStore.models.find((model) => model == selectedModel)
-												?.model_name}
+										{$availableModelsStore.find((model) => model.model_name == message.model_name)
+											?.model_name ||
+											$availableModelsStore.find((model) => model == selectedModel)?.model_name}
 									</div>
 								</div>
 							</div>
@@ -402,8 +399,8 @@
 									<div
 										class="mt-1 animate-ping rounded-full self-center self-middle size-4 bg-white opacity-100"
 									></div>
-								{:else if message.blocks && message.blocks.blocks}
-									{#each message.blocks.blocks as block}
+								{:else if message.blocks && message.blocks}
+									{#each message.blocks as block}
 										<div class="pb-2">
 											{#if block.type_ === 'code'}
 												<div class="relative group">

@@ -12,7 +12,7 @@ pub struct AppPaths {
 	pub app_dir: PathBuf,
 	pub settings_file: PathBuf,
 	pub db: String,
-	pub models: PathBuf,
+	// pub models: PathBuf,
 }
 impl AppPaths {
 	pub fn from_tauri_config(config: &Config) -> Self {
@@ -24,7 +24,7 @@ impl AppPaths {
 			app_dir: app_dir.clone(),
 			settings_file: app_dir.join("settings.json"),
 			db: app_dir.join("byok.sqlite").to_string_lossy().to_string(),
-			models: app_dir.join("models"),
+			// models: app_dir.join("models"),
 		}
 	}
 }

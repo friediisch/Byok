@@ -1,3 +1,15 @@
+use std::collections::HashMap;
+use std::env;
+
+use dotenv::dotenv;
+use lazy_static::lazy_static;
+use log;
+use serde_json::Value;
+use sqlx::migrate::MigrateDatabase;
+use sqlx::sqlite::{SqliteConnectOptions, SqliteRow};
+use sqlx::{Row, Sqlite, SqlitePool};
+use tauri::command;
+
 use crate::data::{AppPaths, DataState};
 use crate::providers::anthropic::send_anthropic_message;
 use crate::providers::groqcloud::send_groqcloud_message;
@@ -5,19 +17,7 @@ use crate::providers::mistralai::send_mistralai_message;
 use crate::providers::openai::send_openai_message;
 use crate::providers::ProviderData;
 use crate::throw;
-use crate::utils::{MessageBlock, MessageBlocks};
-use dotenv::dotenv;
-use lazy_static::lazy_static;
-use serde::{Deserialize, Serialize};
-use serde_json::Value;
-use specta::Type;
-use sqlx::migrate::MigrateDatabase;
-use sqlx::sqlite::{SqliteConnectOptions, SqliteRow};
-use sqlx::FromRow;
-use sqlx::{Row, Sqlite, SqlitePool};
-use std::collections::HashMap;
-use std::env;
-use tauri::command;
+use crate::types::{Chat, Chats, Message, MessageBlock, MessageBlocks, MessageHistory, Model, Models};
 
 lazy_static! {
 	pub static ref DEFAULT_MODELS: Vec<Model> = vec![
@@ -120,7 +120,10 @@ pub async fn load_providers(data: DataState<'_>) -> Result<Vec<ProviderData>, St
 	let query = "SELECT provider_name, api_key, display_name, api_key_valid FROM providers";
 	let providers = sqlx::query_as::<_, ProviderData>(&query);
 	match providers.fetch_all(&data.db_pool).await {
-		Ok(providers) => return Ok(providers),
+		Ok(providers) => {
+			log::debug!("Loaded providers info {:?}", providers);
+			return Ok(providers);
+		}
 		Err(e) => throw!("Error getting providers: {}", e),
 	};
 }
@@ -201,15 +204,6 @@ async fn validate_api_key(provider: &ProviderData) -> Result<bool, String> {
 	}
 }
 
-#[derive(Serialize, Deserialize, Debug, Type)]
-pub struct Message {
-	pub id: String,
-	pub role: String,
-	pub content: String,
-	pub model_name: String,
-	pub blocks: Option<MessageBlocks>,
-}
-
 impl sqlx::FromRow<'_, SqliteRow> for Message {
 	fn from_row(row: &SqliteRow) -> Result<Self, sqlx::Error> {
 		Ok(Message {
@@ -222,60 +216,6 @@ impl sqlx::FromRow<'_, SqliteRow> for Message {
 	}
 }
 
-#[derive(Serialize, Deserialize, Debug, FromRow, Type)]
-pub struct MessageHistory {
-	pub messages: Vec<Message>,
-}
-
-impl MessageHistory {
-	pub fn render(&self, provider_name: &str) -> Value {
-		match provider_name {
-			"openai" => {
-				serde_json::json!(self
-					.messages
-					.iter()
-					.map(|message| {
-						serde_json::json!({
-							"role": message.role,
-							"content": message.content
-						})
-					})
-					.collect::<Vec<_>>())
-			}
-			"anthropic" => {
-				serde_json::json!(self
-					.messages
-					.iter()
-					.map(|message| {
-						serde_json::json!({
-							"role": message.role,
-							"content": message.content
-						})
-					})
-					.collect::<Vec<_>>())
-			}
-			"google" => serde_json::Value::Null,
-			"alephalpha" => serde_json::Value::Null,
-			_ => serde_json::Value::Null,
-		}
-	}
-}
-
-#[derive(Serialize, Deserialize, Debug, Type, FromRow)]
-pub struct Model {
-	pub provider_name: String,
-	pub model_name: String,
-	pub model_display_name: String,
-	pub show: bool,
-	pub max_tokens: u32,
-	pub context_window: u32,
-}
-
-#[derive(Serialize, Deserialize, Debug, Type, FromRow)]
-pub struct Models {
-	models: Vec<Model>,
-}
-
 #[command]
 #[specta::specta]
 pub async fn get_models(data: DataState<'_>) -> Result<Models, String> {
@@ -283,7 +223,7 @@ pub async fn get_models(data: DataState<'_>) -> Result<Models, String> {
 	let models_query = "SELECT provider_name, model_name, model_display_name, show, max_tokens, context_window FROM models WHERE provider_name IN (SELECT provider_name FROM providers WHERE api_key != '') OR provider_name = 'local'";
 	let models_query_result = sqlx::query_as::<_, Model>(models_query).fetch_all(&data.db_pool).await;
 	match models_query_result {
-		Ok(models) => Ok(Models { models }),
+		Ok(models) => Ok(Models(models)),
 		Err(e) => {
 			println!("Error fetching models from database: {}", e.to_string());
 			Err(e.to_string())
@@ -291,30 +231,17 @@ pub async fn get_models(data: DataState<'_>) -> Result<Models, String> {
 	}
 }
 
-#[derive(Serialize, Deserialize, Type, Debug, FromRow)]
-pub struct Chat {
-	pub id: String,
-	pub display_name: String,
-	pub creation_date: String,
-	pub last_updated: String,
-}
-
-#[derive(Serialize, Deserialize, Type, Debug)]
-pub struct Chats {
-	pub chats: Vec<Chat>,
-}
-
 #[command]
 #[specta::specta]
 pub async fn get_chats(data: DataState<'_>) -> Result<Chats, String> {
 	let data = data.0.lock().await;
 	let fetch_query = "SELECT id, display_name, creation_date, last_updated FROM chats WHERE archived = 'false' ORDER BY last_updated DESC";
-	let chats = Chats {
-		chats: sqlx::query_as::<_, Chat>(fetch_query)
+	let chats = Chats(
+		sqlx::query_as::<_, Chat>(fetch_query)
 			.fetch_all(&data.db_pool)
 			.await
 			.map_err(|e| e.to_string())?,
-	};
+	);
 	Ok(chats)
 }
 
@@ -334,7 +261,7 @@ pub async fn load_chat(chat_id: String, data: DataState<'_>) -> Result<Vec<Messa
 					.fetch_all(&data.db_pool)
 					.await
 				{
-					Ok(message_blocks) => message.blocks = Some(MessageBlocks { blocks: message_blocks }),
+					Ok(message_blocks) => message.blocks = Some(MessageBlocks(message_blocks)),
 					Err(err) => {
 						eprintln!("Error fetching message blocks from database: {}", err);
 					}
@@ -364,7 +291,7 @@ pub async fn insert_message(new_message_id: &str, role: &str, message: &str, cha
 pub async fn insert_message_blocks(message_id: &str, message_blocks: &MessageBlocks, data: DataState<'_>) {
 	let insert_message_blocks_query: &str =
 		"INSERT INTO message_blocks (message_id, type_, language, raw_content, rendered_content, copied) VALUES ($1, $2, $3, $4, $5, $6)";
-	for block in message_blocks.blocks.iter() {
+	for block in message_blocks.iter() {
 		let insert_message_blocks_query_result = sqlx::query(insert_message_blocks_query)
 			.bind(&message_id)
 			.bind(&block.type_)
@@ -460,19 +387,17 @@ pub async fn read_api_keys_from_env(data: DataState<'_>) -> Result<(), String> {
 	return Ok(());
 }
 
-pub async fn get_messages(chat_id: &str, data: DataState<'_>) -> Result<MessageHistory, String> {
+pub async fn get_messages(chat_id: &str, data: DataState<'_>) -> Result<MessageHistory, anyhow::Error> {
 	let messages_query: &str = "SELECT id, role, content, model_name FROM messages WHERE chat_id = $1";
-	let messages = MessageHistory {
-		messages: sqlx::query_as::<_, Message>(messages_query)
-			.bind(&chat_id)
-			.fetch_all(&data.0.lock().await.db_pool)
-			.await
-			.map_err(|e| {
-				eprintln!("Error fetching messages from database: {}", e);
-				e.to_string()
-			})?,
-	};
-	return Ok(messages);
+	let messages = sqlx::query_as::<_, Message>(messages_query)
+		.bind(&chat_id)
+		.fetch_all(&data.0.lock().await.db_pool)
+		.await
+		.map_err(|e| {
+			eprintln!("Error fetching messages from database: {}", e);
+			anyhow::anyhow!("Database error: {}", e)
+		})?;
+	Ok(MessageHistory(messages))
 }
 
 #[command]

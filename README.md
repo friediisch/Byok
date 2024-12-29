@@ -4,6 +4,7 @@
 
 ##### High Priority
 
+- Use `sqlx prepare` to compile-time validate types in queries
 - Handle errors within the LLM providers
   - Include a note saying that LLM providers can be down sometimes
   - Handle such cases gracefully

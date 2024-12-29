@@ -62,12 +62,12 @@ export function applyAndSaveSettings(newSettings: Settings) {
     return invoke()<null>("apply_and_save_settings", { newSettings })
 }
 
-export type MessageBlocks = { blocks: MessageBlock[] }
-export type Chats = { chats: Chat[] }
 export type Settings = { default_model: string; default_provider: string; code_theme: string }
-export type Model = { provider_name: string; model_name: string; model_display_name: string; show: boolean; max_tokens: number; context_window: number }
-export type Message = { id: string; role: string; content: string; model_name: string; blocks: MessageBlocks | null }
-export type ProviderData = { provider_name: string; api_key: string; display_name: string; api_key_valid: boolean }
-export type Models = { models: Model[] }
-export type MessageBlock = { id: number | null; type_: string; language: string | null; raw_content: string; rendered_content: string; copied: boolean | null }
 export type Chat = { id: string; display_name: string; creation_date: string; last_updated: string }
+export type Model = { provider_name: string; model_name: string; model_display_name: string; show: boolean; max_tokens: number; context_window: number }
+export type Chats = Chat[]
+export type Message = { id: string; role: string; content: string; model_name: string; blocks: MessageBlocks | null }
+export type MessageBlocks = MessageBlock[]
+export type Models = Model[]
+export type ProviderData = { provider_name: string; api_key: string; display_name: string; api_key_valid: boolean }
+export type MessageBlock = { id: number | null; type_: string; language: string | null; raw_content: string; rendered_content: string; copied: boolean | null }
