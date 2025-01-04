@@ -1,9 +1,9 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use reqwest::{Client, Response};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
-use crate::llm_providers::LLMConfig;
+use crate::llm_providers::{LLMConfig, LLMMessage};
 use crate::types::MessageHistory;
 
 #[derive(Clone)]
@@ -26,15 +26,9 @@ struct OpenAIChatCompletionResponse {
 #[derive(Serialize, Deserialize, Debug)]
 struct Choice {
 	index: i32,
-	pub message: OpenAIMessage,
+	pub message: LLMMessage,
 	logprobs: Option<serde_json::Value>,
 	finish_reason: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct OpenAIMessage {
-	role: String,
-	content: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -55,9 +49,9 @@ impl OpenAIProvider {
 	pub async fn send_message(&self, messages: &MessageHistory, model: &str, config: &LLMConfig) -> Result<String> {
 		let client = Client::new();
 
-		let openai_messages: Vec<OpenAIMessage> = messages
+		let openai_messages: Vec<LLMMessage> = messages
 			.iter()
-			.map(|msg| OpenAIMessage {
+			.map(|msg| LLMMessage {
 				role: msg.role.to_string(),
 				content: msg.content.to_string(),
 			})
@@ -78,15 +72,10 @@ impl OpenAIProvider {
 			.header("Authorization", format!("Bearer {}", &self.api_key))
 			.json(&body)
 			.send()
-			.await?;
+			.await
+			.context("Failed to send message to OpenAI")?;
 
-		let response_text = response.text().await?;
-
-		// log::debug!("OpenAI response: {}", response_text);
-		// let parsed_response: OpenAIChatCompletionResponse = serde_json::from_str(&response_text)?;
-		// log::debug!("Parsed response: {:?}", parsed_response);
-		// let answer = parsed_response.choices.get(0).ok_or(anyhow::anyhow!("No response"))?.message.content.clone();
-		// log::debug!("Answer: {}", answer);
+		let response_text = response.text().await.context("Failed to read response from OpenAI")?;
 
 		if let Ok(parsed_response) = serde_json::from_str::<OpenAIChatCompletionResponse>(&response_text) {
 			let answer = parsed_response.choices.get(0).ok_or(anyhow::anyhow!("No response"))?.message.content.clone();
@@ -94,6 +83,6 @@ impl OpenAIProvider {
 			return Ok(answer);
 		}
 
-		Err(anyhow::anyhow!("Failed to parse response: {}", response_text))
+		Err(anyhow::anyhow!("Something went wrong when sending message to OpenAI: {}", response_text))
 	}
 }

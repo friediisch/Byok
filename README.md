@@ -4,6 +4,7 @@
 
 ##### High Priority
 
+- Refactor LLM provider
 - Use `sqlx prepare` to compile-time validate types in queries
 - Handle errors within the LLM providers
   - Include a note saying that LLM providers can be down sometimes
@@ -11,6 +12,7 @@
 - Check out Kalosm for local inference
   - https://docs.rs/kalosm/latest/kalosm/
   - https://github.com/EricLBuehler/mistral.rs
+- Check out Ollama for local inference
 - Add way to add new model to the database
   - add way to hide models
 - Add proper logging with levels and stuff (when applicable)

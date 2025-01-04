@@ -4,4 +4,5 @@ mod types;
 
 // pub use openai::OpenAIProvider;
 pub use traits::LLMProvider;
-pub use types::{LLMConfig, LLMError, LLMMessage};
+pub use types::{LLMConfig, LLMMessage};
+// pub use types::LLMError;

@@ -23,11 +23,11 @@ impl Default for LLMConfig {
 	}
 }
 
-#[derive(Debug)]
-pub enum LLMError {
-	Authentication(String),
-	RateLimit(String),
-	InvalidRequest(String),
-	NetworkError(String),
-	Other(String),
-}
+// #[derive(Debug)]
+// pub enum LLMError {
+// 	Authentication(String),
+// 	RateLimit(String),
+// 	InvalidRequest(String),
+// 	NetworkError(String),
+// 	Other(String),
+// }

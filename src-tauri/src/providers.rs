@@ -117,7 +117,13 @@ pub async fn get_message(msg: String, chat_id: String, provider_name: String, mo
 
 	let llm: LLMProvider = LLMProvider::new(&provider_name, api_key);
 
-	let answer: String = llm.send_message(&messages, &model_name, &llm_config).await.unwrap();
+	let answer = match llm.send_message(&messages, &model_name, &llm_config).await {
+		Ok(answer) => answer,
+		Err(e) => {
+			log::error!("Error sending message to LLM: {}", e);
+			e.to_string()
+		}
+	};
 
 	let new_answer_id = uuid::Uuid::new_v4().to_string();
 	insert_message(&new_answer_id, "assistant", &answer, &chat_id, &model_name, data.clone()).await;
@@ -155,7 +161,13 @@ pub async fn get_message(msg: String, chat_id: String, provider_name: String, mo
 						top_p: None,
 					};
 
-					let new_chat_display_name = llm.send_message(&display_name_messages, &model_name, &llm_config).await.unwrap();
+					let new_chat_display_name = match llm.send_message(&display_name_messages, &model_name, &llm_config).await {
+						Ok(answer) => answer,
+						Err(e) => {
+							log::error!("Error sending message to LLM: {}", e);
+							e.to_string()
+						}
+					};
 
 					log::debug!("New chat display name: {}", new_chat_display_name);
 
