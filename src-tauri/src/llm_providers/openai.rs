@@ -39,9 +39,9 @@ struct OpenAIMessage {
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Usage {
-	prompt_tokens: i32,
-	completion_tokens: i32,
-	total_tokens: i32,
+	prompt_tokens: u32,
+	completion_tokens: u32,
+	total_tokens: u32,
 }
 
 impl OpenAIProvider {
@@ -55,12 +55,22 @@ impl OpenAIProvider {
 	pub async fn send_message(&self, messages: &MessageHistory, model: &str, config: &LLMConfig) -> Result<String> {
 		let client = Client::new();
 
+		let openai_messages: Vec<OpenAIMessage> = messages
+			.iter()
+			.map(|msg| OpenAIMessage {
+				role: msg.role.to_string(),
+				content: msg.content.to_string(),
+			})
+			.collect();
+
 		let body = json!({
 			"model": model,
-			"messages": messages,
+			"messages": openai_messages,
 			"temperature": config.temperature,
 			"max_tokens": config.max_tokens
 		});
+
+		log::debug!("Sending message to OpenAI: {:?}", body);
 
 		let response: Response = client
 			.post(&self.url)
@@ -71,10 +81,20 @@ impl OpenAIProvider {
 			.await?;
 
 		let response_text = response.text().await?;
-		let parsed_response: OpenAIChatCompletionResponse = serde_json::from_str(&response_text)?;
-		let answer = parsed_response.choices.get(0).ok_or(anyhow::anyhow!("No response"))?.message.content.clone();
 
-		Ok(answer)
+		// log::debug!("OpenAI response: {}", response_text);
+		// let parsed_response: OpenAIChatCompletionResponse = serde_json::from_str(&response_text)?;
+		// log::debug!("Parsed response: {:?}", parsed_response);
+		// let answer = parsed_response.choices.get(0).ok_or(anyhow::anyhow!("No response"))?.message.content.clone();
+		// log::debug!("Answer: {}", answer);
+
+		if let Ok(parsed_response) = serde_json::from_str::<OpenAIChatCompletionResponse>(&response_text) {
+			let answer = parsed_response.choices.get(0).ok_or(anyhow::anyhow!("No response"))?.message.content.clone();
+			log::debug!("Answer: {}", answer);
+			return Ok(answer);
+		}
+
+		Err(anyhow::anyhow!("Failed to parse response: {}", response_text))
 	}
 
 	pub fn get_provider_name(&self) -> &'static str {

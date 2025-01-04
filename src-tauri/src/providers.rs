@@ -133,14 +133,14 @@ pub async fn get_message(msg: String, chat_id: String, provider_name: String, mo
 
 	let chats_result = get_chat_display_name(&chat_id, data.clone()).await;
 
-	const MAX_DISPLAY_NAME_LENGTH: usize = 32;
+	const MAX_DISPLAY_NAME_LENGTH: u32 = 32;
 
 	match chats_result {
 		Ok(Some((display_name,))) => {
 			match display_name.starts_with("unnamed_new_chat_") {
 				true => {
 					let display_name_messages: MessageHistory = MessageHistory(vec![Message {
-						id: "none".to_string(),
+						id: "".to_string(),
 						role: "user".to_string(),
 						content: format!(
 							"Please respond with the topic of the thread for these two messages:
@@ -149,13 +149,20 @@ pub async fn get_message(msg: String, chat_id: String, provider_name: String, mo
 								Your response will be used to name the chat, therefore omit any other content from your response, keep it short and use the language used in the prompt.
 								Do not use quotation marks. Capitalize the first letter of your answer."
 						),
-						model_name: "".into(),
+						model_name: model_name.clone(),
 						blocks: None,
 					}]);
 
-					let new_chat_display_name: String = llm.send_message(&display_name_messages, &model_name, &llm_config).await.unwrap();
-					// let data = data.0.lock().await;
-					// update the display_name field in the chats database
+					let llm_config = LLMConfig {
+						temperature: 0.0,
+						max_tokens: MAX_DISPLAY_NAME_LENGTH,
+						top_p: None,
+					};
+
+					let new_chat_display_name = llm.send_message(&display_name_messages, &model_name, &llm_config).await.unwrap();
+
+					log::debug!("New chat display name: {}", new_chat_display_name);
+
 					let update_chat_display_name_query: &str = "UPDATE chats SET display_name = $1 WHERE id = $2";
 					let _ = sqlx::query(update_chat_display_name_query)
 						.bind(&new_chat_display_name)
