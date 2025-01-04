@@ -143,7 +143,7 @@ pub async fn get_message(msg: String, chat_id: String, provider_name: String, mo
 								'user': '{msg}',
 								'assistant': '{answer}'
 								Your response will be used to name the chat, therefore omit any other content from your response, keep it short and use the language used in the prompt.
-								Do not use quotation marks. Capitalize the first letter of your answer."
+								Do not use quotation marks. Capitalize the first letter of your answer. It is okay if your answer consists of keywords, it does not need to be a complete sentence."
 						),
 						model_name: model_name.clone(),
 						blocks: None,
