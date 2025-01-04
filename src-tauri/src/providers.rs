@@ -3,21 +3,17 @@ pub mod groqcloud;
 pub mod mistralai;
 pub mod openai;
 
-use langchain_rust::language_models::llm::LLM;
-use langchain_rust::llm::OpenAIConfig;
+// use langchain_rust::language_models::options::CallOptions;
 use langchain_rust::memory::SimpleMemory;
 use langchain_rust::schemas::messages::Message as LangChainMessage;
 use langchain_rust::schemas::BaseMemory;
-use langchain_rust::{language_models::options::CallOptions, llm::openai::OpenAI, llm::Claude};
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
 use specta::Type;
 use sqlx::prelude::FromRow;
 use tauri::command;
 
-use self::{anthropic::send_anthropic_message, groqcloud::send_groqcloud_message, mistralai::send_mistralai_message, openai::send_openai_message};
 use crate::db::get_api_key;
-use crate::llm_providers::{LLMConfig, LLMProvider, OpenAIProvider};
+use crate::llm_providers::{LLMConfig, LLMProvider};
 use crate::{
 	data::DataState,
 	db::{get_chat_display_name, get_messages, insert_chat_display_name, insert_message, insert_message_blocks},
@@ -98,24 +94,24 @@ pub async fn get_message(msg: String, chat_id: String, provider_name: String, mo
 		});
 	}
 
-	let call_options = CallOptions {
-		candidate_count: None,
-		max_tokens: Some(4096),
-		temperature: Some(0.7),
-		stop_words: None,
-		streaming_func: None,
-		top_k: None,
-		top_p: None,
-		seed: None,
-		min_length: None,
-		max_length: None,
-		n: None,
-		repetition_penalty: None,
-		frequency_penalty: None,
-		presence_penalty: None,
-		functions: None,
-		function_call_behavior: None,
-	};
+	// let call_options = CallOptions {
+	// 	candidate_count: None,
+	// 	max_tokens: Some(4096),
+	// 	temperature: Some(0.7),
+	// 	stop_words: None,
+	// 	streaming_func: None,
+	// 	top_k: None,
+	// 	top_p: None,
+	// 	seed: None,
+	// 	min_length: None,
+	// 	max_length: None,
+	// 	n: None,
+	// 	repetition_penalty: None,
+	// 	frequency_penalty: None,
+	// 	presence_penalty: None,
+	// 	functions: None,
+	// 	function_call_behavior: None,
+	// };
 
 	let llm_config = LLMConfig::default();
 

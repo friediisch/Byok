@@ -40,13 +40,4 @@ impl LLMProvider {
 			// Self::Groq(provider) => provider.send_message(messages, model).await,
 		}
 	}
-
-	pub fn get_provider_name(&self) -> &'static str {
-		match self {
-			Self::OpenAI(provider) => provider.get_provider_name(),
-			// Self::Anthropic(provider) => provider.get_provider_name(),
-			// Self::Mistral(provider) => provider.get_provider_name(),
-			// Self::Groq(provider) => provider.get_provider_name(),
-		}
-	}
 }

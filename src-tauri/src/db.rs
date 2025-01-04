@@ -4,7 +4,6 @@ use std::env;
 use dotenv::dotenv;
 use lazy_static::lazy_static;
 use log;
-use serde_json::Value;
 use sqlx::migrate::MigrateDatabase;
 use sqlx::sqlite::{SqliteConnectOptions, SqliteRow};
 use sqlx::{Row, Sqlite, SqlitePool};

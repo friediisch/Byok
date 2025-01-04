@@ -96,8 +96,4 @@ impl OpenAIProvider {
 
 		Err(anyhow::anyhow!("Failed to parse response: {}", response_text))
 	}
-
-	pub fn get_provider_name(&self) -> &'static str {
-		"openai"
-	}
 }
