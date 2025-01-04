@@ -38,6 +38,7 @@
 - RAG-support
 - Word-wrap chat names correctly
 - Render markdown tables
+- un-archive chats
 
 ### Get started
 
