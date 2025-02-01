@@ -6,6 +6,7 @@ use serde_json::json;
 use crate::llm_providers::{LLMConfig, LLMMessage};
 use crate::types::MessageHistory;
 
+/// OpenAIProvider is used as the default implementation of "LLMProvider".
 #[derive(Clone)]
 pub struct OpenAIProvider {
 	api_key: String,
@@ -39,10 +40,10 @@ struct Usage {
 }
 
 impl OpenAIProvider {
-	pub fn new<T: Into<String>>(api_key: T) -> Self {
+	pub fn new(api_key: &str, url: &str) -> Self {
 		Self {
-			api_key: api_key.into(),
-			url: "https://api.openai.com/v1/chat/completions".into(),
+			api_key: api_key.to_string(),
+			url: url.to_string(),
 		}
 	}
 

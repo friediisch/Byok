@@ -10,10 +10,7 @@ use sqlx::{Row, Sqlite, SqlitePool};
 use tauri::command;
 
 use crate::data::{AppPaths, DataState};
-use crate::providers::anthropic::send_anthropic_message;
-use crate::providers::groqcloud::send_groqcloud_message;
-use crate::providers::mistralai::send_mistralai_message;
-use crate::providers::openai::send_openai_message;
+use crate::llm_providers::{LLMConfig, LLMProvider};
 use crate::providers::ProviderData;
 use crate::throw;
 use crate::types::{Chat, Chats, Message, MessageBlock, MessageBlocks, MessageHistory, Model, Models};
@@ -151,56 +148,25 @@ pub async fn set_api_key(provider: ProviderData, data: DataState<'_>) -> Result<
 
 async fn validate_api_key(provider: &ProviderData) -> Result<bool, String> {
 	let model = DEFAULT_MODELS.iter().find(|m| m.provider_name == provider.provider_name).unwrap();
-	match provider.provider_name.as_str() {
-		"openai" => {
-			let body = serde_json::json!({
-				"model": model.model_name,
-				"messages": [{"role": "user", "content": "Hello"}],
-				"max_tokens": 1
-			});
-			match send_openai_message(body, &provider.api_key).await {
-				Ok(_) => Ok(true),
-				Err(_) => Ok(false),
-			}
+	let llm_config = LLMConfig::default();
+
+	let llm: LLMProvider = LLMProvider::new(&provider.provider_name, provider.api_key.clone());
+
+	let messages = MessageHistory(vec![Message {
+		id: "".to_string(),
+		role: "user".to_string(),
+		content: "Hello".to_string(),
+		model_name: model.model_name.clone(),
+		blocks: None,
+	}]);
+
+	match llm.send_message(&messages, &model.model_name, &llm_config).await {
+		Ok(_) => return Ok(true),
+		Err(e) => {
+			log::error!("Error sending message to LLM: {}", e);
+			return Err(e.to_string());
 		}
-		"anthropic" => {
-			let body = serde_json::json!({
-				"model": model.model_name,
-				"messages": [{"role": "user", "content": "Hello"}],
-				"max_tokens": 1
-			});
-			match send_anthropic_message(body, &provider.api_key).await {
-				Ok(response) => {
-					println!("Raw Anthropic response: {:?}", response);
-					Ok(true)
-				}
-				Err(_) => Ok(false),
-			}
-		}
-		"mistralai" => {
-			let body = serde_json::json!({
-				"model": model.model_name,
-				"messages": [{"role": "user", "content": "Hello"}],
-				"max_tokens": 1
-			});
-			match send_mistralai_message(body, &provider.api_key).await {
-				Ok(_) => Ok(true),
-				Err(_) => Ok(false),
-			}
-		}
-		"groqcloud" => {
-			let body = serde_json::json!({
-				"model": model.model_name,
-				"messages": [{"role": "user", "content": "Hello"}],
-				"max_tokens": 1
-			});
-			match send_groqcloud_message(body, &provider.api_key).await {
-				Ok(_) => Ok(true),
-				Err(_) => Ok(false),
-			}
-		}
-		_ => Err(format!("Unsupported provider: {}", provider.provider_name)),
-	}
+	};
 }
 
 impl sqlx::FromRow<'_, SqliteRow> for Message {

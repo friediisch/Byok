@@ -24,8 +24,8 @@ pub enum LLMProvider {
 impl LLMProvider {
 	pub fn new(provider_name: &str, api_key: String) -> Self {
 		match provider_name {
-			"openai" => Self::OpenAI(OpenAIProvider::new(api_key)),
-			// "anthropic" => Self::Anthropic(AnthropicProvider::new(api_key)),
+			"openai" => Self::OpenAI(OpenAIProvider::new(&api_key, "https://api.openai.com/v1/chat/completions")),
+			// "anthropic" => Self::OpenAI(OpenAIProvider::new(api_key)),
 			// "mistral" => Self::Mistral(MistralProvider::new(api_key)),
 			// "groq" => Self::Groq(GroqProvider::new(api_key)),
 			_ => panic!("Unsupported provider: {}", provider_name),
