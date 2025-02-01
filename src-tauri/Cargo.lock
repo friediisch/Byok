@@ -588,6 +588,7 @@ dependencies = [
  "anyhow",
  "anyhow-tauri",
  "async-trait",
+ "byok",
  "chrono",
  "cocoa 0.25.0",
  "derive_more 1.0.0",

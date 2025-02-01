@@ -62,3 +62,6 @@ lto = true
 
 [profile.dev]
 incremental = true
+
+[dev-dependencies]
+byok = { path = "." }
