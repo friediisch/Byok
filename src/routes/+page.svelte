@@ -26,6 +26,9 @@
     </a>
   </div>
   <p>Click on the Tauri, Vite, and SvelteKit logos to learn more.</p>
+  <div class="bg-blue-500 text-white p-4 rounded-lg shadow-md mx-auto max-w-sm">
+    This is a test div styled with Tailwind CSS
+  </div>
 
   <form class="row" onsubmit={greet}>
     <input id="greet-input" placeholder="Enter a name..." bind:value={name} />
