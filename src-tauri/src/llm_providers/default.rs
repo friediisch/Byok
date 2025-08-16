@@ -1,3 +1,34 @@
+//! Default LLM Provider Implementation
+//!
+//! This module provides a generic LLM provider that follows the OpenAI API format.
+//! It can be used as a fallback or default provider for any LLM service that
+//! implements the OpenAI-compatible API interface.
+//!
+//! # Example
+//!
+//! ```rust
+//! use crate::llm_providers::default::DefaultProvider;
+//! use crate::llm_providers::{LLMConfig, LLMMessage};
+//! use crate::types::MessageHistory;
+//!
+//! // Create a new provider instance
+//! let provider = DefaultProvider::new(
+//!     "my-provider",
+//!     "your-api-key",
+//!     "https://api.example.com/v1/chat/completions"
+//! );
+//!
+//! // Configure the request
+//! let config = LLMConfig {
+//!     temperature: 0.7,
+//!     max_tokens: 1000,
+//! };
+//!
+//! // Send a message
+//! let messages = MessageHistory::new();
+//! let response = provider.send_message(&messages, "gpt-3.5-turbo", &config).await?;
+//! ```
+
 use anyhow::{Context, Result};
 use reqwest::{Client, Response};
 use serde::{Deserialize, Serialize};
