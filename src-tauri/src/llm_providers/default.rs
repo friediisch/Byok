@@ -3,18 +3,19 @@ use reqwest::{Client, Response};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
+use crate::llm_providers::traits::LLMProvider;
 use crate::llm_providers::{LLMConfig, LLMMessage};
 use crate::types::MessageHistory;
 
-/// OpenAIProvider is used as the default implementation of "LLMProvider".
 #[derive(Clone)]
-pub struct OpenAIProvider {
+pub struct DefaultProvider {
+	provider_name: String,
 	api_key: String,
 	url: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-struct OpenAIChatCompletionResponse {
+struct CompletionResponse {
 	id: String,
 	object: String,
 	created: i64,
@@ -39,15 +40,26 @@ struct Usage {
 	total_tokens: u32,
 }
 
-impl OpenAIProvider {
-	pub fn new(api_key: &str, url: &str) -> Self {
+impl DefaultProvider {
+	pub fn new(provider_name: &str, api_key: &str, url: &str) -> Self {
 		Self {
+			provider_name: provider_name.to_string(),
 			api_key: api_key.to_string(),
 			url: url.to_string(),
 		}
 	}
 
-	pub async fn send_message(&self, messages: &MessageHistory, model: &str, config: &LLMConfig) -> Result<String> {
+	fn base_url(&self) -> &str {
+		&self.url
+	}
+}
+
+impl LLMProvider for DefaultProvider {
+	fn provider_name(&self) -> &str {
+		&self.provider_name
+	}
+
+	async fn send_message(&self, messages: &MessageHistory, model: &str, config: &LLMConfig) -> Result<String> {
 		let client = Client::new();
 
 		let openai_messages: Vec<LLMMessage> = messages
@@ -68,17 +80,17 @@ impl OpenAIProvider {
 		log::debug!("Sending message to OpenAI: {:?}", body);
 
 		let response: Response = client
-			.post(&self.url)
+			.post(self.base_url())
 			.header("Content-Type", "application/json")
 			.header("Authorization", format!("Bearer {}", &self.api_key))
 			.json(&body)
 			.send()
 			.await
-			.context("Failed to send message to OpenAI")?;
+			.context(format!("Failed to send message to {}", self.provider_name))?;
 
-		let response_text = response.text().await.context("Failed to read response from OpenAI")?;
+		let response_text = response.text().await.context(format!("Failed to read response from {}", self.provider_name))?;
 
-		if let Ok(parsed_response) = serde_json::from_str::<OpenAIChatCompletionResponse>(&response_text) {
+		if let Ok(parsed_response) = serde_json::from_str::<CompletionResponse>(&response_text) {
 			let answer = parsed_response.choices.get(0).ok_or(anyhow::anyhow!("No response"))?.message.content.clone();
 			log::debug!("Answer: {}", answer);
 			return Ok(answer);

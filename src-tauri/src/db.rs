@@ -10,7 +10,7 @@ use sqlx::{Row, Sqlite, SqlitePool};
 use tauri::command;
 
 use crate::data::{AppPaths, DataState};
-use crate::llm_providers::{LLMConfig, LLMProvider};
+use crate::llm_providers::{LLMConfig, LLMProvider, Provider};
 use crate::providers::ProviderData;
 use crate::throw;
 use crate::types::{Chat, Chats, Message, MessageBlock, MessageBlocks, MessageHistory, Model, Models};
@@ -150,7 +150,7 @@ async fn validate_api_key(provider: &ProviderData) -> Result<bool, String> {
 	let model = DEFAULT_MODELS.iter().find(|m| m.provider_name == provider.provider_name).unwrap();
 	let llm_config = LLMConfig::default();
 
-	let llm: LLMProvider = LLMProvider::new(&provider.provider_name, provider.api_key.clone());
+	let llm = Provider::new(&provider.provider_name, &provider.api_key);
 
 	let messages = MessageHistory(vec![Message {
 		id: "".to_string(),

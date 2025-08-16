@@ -69,5 +69,5 @@ export type Chats = Chat[]
 export type Message = { id: string; role: string; content: string; model_name: string; blocks: MessageBlocks | null }
 export type MessageBlocks = MessageBlock[]
 export type Models = Model[]
-export type ProviderData = { provider_name: string; api_key: string; display_name: string; api_key_valid: boolean }
 export type MessageBlock = { id: number | null; type_: string; language: string | null; raw_content: string; rendered_content: string; copied: boolean | null }
+export type ProviderData = { provider_name: string; api_key: string; display_name: string; api_key_valid: boolean }

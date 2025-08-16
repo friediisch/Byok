@@ -1,9 +1,6 @@
-pub mod anthropic;
 pub mod groqcloud;
 pub mod mistralai;
-pub mod openai;
 
-// use langchain_rust::language_models::options::CallOptions;
 use langchain_rust::memory::SimpleMemory;
 use langchain_rust::schemas::messages::Message as LangChainMessage;
 use langchain_rust::schemas::BaseMemory;
@@ -13,7 +10,7 @@ use sqlx::prelude::FromRow;
 use tauri::command;
 
 use crate::db::get_api_key;
-use crate::llm_providers::{LLMConfig, LLMProvider};
+use crate::llm_providers::{LLMConfig, LLMProvider, Provider};
 use crate::{
 	data::DataState,
 	db::{get_chat_display_name, get_messages, insert_chat_display_name, insert_message, insert_message_blocks},
@@ -115,7 +112,8 @@ pub async fn get_message(msg: String, chat_id: String, provider_name: String, mo
 
 	let llm_config = LLMConfig::default();
 
-	let llm: LLMProvider = LLMProvider::new(&provider_name, api_key);
+	// let llm: dyn LLMProvider = LLMProvider::new(&provider_name, api_key);
+	let llm = Provider::new(&provider_name, &api_key);
 
 	let answer = match llm.send_message(&messages, &model_name, &llm_config).await {
 		Ok(answer) => answer,
