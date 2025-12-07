@@ -2,6 +2,8 @@
 
 ## Get started
 
+Run
+
 ```bash
 git clone https://github.com/friediisch/Byok.git
 cd Byok
@@ -9,6 +11,8 @@ npm install
 npm run build
 npm run tauri dev
 ```
+
+Sometimes issues can be resolved by rebooting 🤷🏼‍♂️.
 
 ### Todos:
 
