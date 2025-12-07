@@ -12,6 +12,7 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "Byok",
         "width": 2560,
         "height": 1600,
@@ -42,8 +43,6 @@
     }
   },
   "plugins": {
-    "dialog": {},
-    "notification": {},
     "shell": {
       "open": true
     }

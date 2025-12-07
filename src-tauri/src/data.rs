@@ -4,7 +4,7 @@ use std::env;
 use crate::settings::Settings;
 use std::path::PathBuf;
 use std::sync::Arc;
-use tauri::{App, Config, State};
+use tauri::State;
 use tokio::sync::Mutex;
 
 #[derive(Clone)]
@@ -15,10 +15,21 @@ pub struct AppPaths {
 	// pub models: PathBuf,
 }
 impl AppPaths {
-	pub fn from_tauri_app(app: &App) -> Self {
+	/// Create AppPaths from the app identifier (for use before App is fully initialized)
+	pub fn from_identifier(identifier: &str) -> Self {
 		let app_dir = match env::var("DEVELOPMENT").is_ok() {
 			true => env::current_dir().unwrap().join("appdata"),
-			false => app.path().app_data_dir().unwrap(),
+			false => {
+				// Compute the app data directory based on the platform
+				#[cfg(target_os = "macos")]
+				let base_dir = dirs::data_dir().unwrap_or_else(|| PathBuf::from("~"));
+				#[cfg(target_os = "windows")]
+				let base_dir = dirs::data_local_dir().unwrap_or_else(|| PathBuf::from("."));
+				#[cfg(target_os = "linux")]
+				let base_dir = dirs::data_dir().unwrap_or_else(|| PathBuf::from("."));
+
+				base_dir.join(identifier)
+			}
 		};
 		AppPaths {
 			app_dir: app_dir.clone(),

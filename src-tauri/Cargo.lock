@@ -623,6 +623,7 @@ dependencies = [
  "chrono",
  "cocoa",
  "derive_more 2.0.1",
+ "dirs",
  "dotenv",
  "env_logger",
  "futures",

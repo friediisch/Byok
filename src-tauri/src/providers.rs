@@ -1,5 +1,5 @@
-pub mod groqcloud;
-pub mod mistralai;
+// pub mod groqcloud;
+// pub mod mistralai;
 
 use langchain_rust::memory::SimpleMemory;
 use langchain_rust::schemas::messages::Message as LangChainMessage;
@@ -7,7 +7,7 @@ use langchain_rust::schemas::BaseMemory;
 use serde::{Deserialize, Serialize};
 use specta::Type;
 use sqlx::prelude::FromRow;
-use tauri::command;
+use tauri::{command, Emitter};
 
 use crate::db::get_api_key;
 use crate::llm_providers::{LLMConfig, LLMProvider, Provider};
