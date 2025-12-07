@@ -1,5 +1,15 @@
 # Byok
 
+## Get started
+
+```bash
+git clone https://github.com/friediisch/Byok.git
+cd Byok
+npm install
+npm run tauri build
+npm run tauri dev
+```
+
 ### Todos:
 
 ##### High Priority
