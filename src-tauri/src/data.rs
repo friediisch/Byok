@@ -4,7 +4,7 @@ use std::env;
 use crate::settings::Settings;
 use std::path::PathBuf;
 use std::sync::Arc;
-use tauri::{Config, State, App};
+use tauri::{App, Config, State};
 use tokio::sync::Mutex;
 
 #[derive(Clone)]
