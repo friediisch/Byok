@@ -1,0 +1,7 @@
+[build]
+jobs = 8
+rustc-wrapper = "sccache"
+# string change w/ 8 jobs & sccache: 7-8s compile time
+
+# [target.aarch64-apple-darwin]
+# rustflags = ["-C", "link-arg=-fuse-ld=/usr/local/bin/zld"]
