@@ -143,7 +143,7 @@ pub async fn get_message(msg: String, chat_id: String, provider_name: String, mo
 						id: "".to_string(),
 						role: "user".to_string(),
 						content: format!(
-							"Please respond with the topic of the thread for these two messages:
+							"Based on the following conversation, create a short and descriptive title (3–6 words) that summarizes the main topic or purpose of the exchange:
 								'user': '{msg}',
 								'assistant': '{answer}'
 								Your response will be used to name the chat, therefore omit any other content from your response, keep it short and use the language used in the prompt.

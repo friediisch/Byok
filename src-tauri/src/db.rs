@@ -322,10 +322,10 @@ pub async fn read_api_keys_from_env(data: DataState<'_>) -> Result<(), String> {
 	let data: tokio::sync::MutexGuard<'_, crate::data::Data> = data.0.lock().await;
 	dotenv().ok();
 	let development = env::var("DEVELOPMENT").unwrap_or_else(|_| "0".to_string());
-	if development == "0" {
-		println!("Not in development mode, skipping reading API keys from environment variables");
-		return Ok(());
-	}
+	// if development == "0" {
+	// 	println!("Not in development mode, skipping reading API keys from environment variables");
+	// 	return Ok(());
+	// }
 	let mut api_keys = HashMap::new();
 	api_keys.insert("google", env::var("google").unwrap_or("".to_string()));
 	api_keys.insert("openai", env::var("openai").unwrap_or("".to_string()));

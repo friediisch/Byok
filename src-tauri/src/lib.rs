@@ -1,4 +1,6 @@
 #![cfg_attr(all(not(debug_assertions), target_os = "windows"), windows_subsystem = "windows")]
+// Allow unexpected_cfgs from objc crate macros
+#![allow(unexpected_cfgs)]
 
 use dotenv::dotenv;
 use tauri::menu::{MenuBuilder, MenuItem, PredefinedMenuItem, SubmenuBuilder};
@@ -90,7 +92,7 @@ pub async fn run() {
 
 	let app = tauri::Builder::default()
 		.plugin(tauri_plugin_dialog::init())
-		.plugin(tauri_plugin_shell::init())
+		.plugin(tauri_plugin_opener::init())
 		.invoke_handler(tauri::generate_handler![
 			error_popup,
 			providers::get_message,
@@ -111,6 +113,7 @@ pub async fn run() {
 			let win = app.get_webview_window("main").expect("main window not found");
 
 			#[cfg(target_os = "macos")]
+			#[allow(deprecated)]
 			{
 				use cocoa::appkit::NSWindow;
 				let nsw = win.ns_window().unwrap() as cocoa::base::id;
@@ -227,10 +230,10 @@ pub async fn run() {
 
 			Ok(menu)
 		})
-		.on_menu_event(|app, event| match event.id().as_ref() {
+		.on_menu_event(|_app, event| match event.id().as_ref() {
 			"learn_more" => {
 				let url = "https://github.com/friediisch/GenHub";
-				let _ = tauri_plugin_shell::ShellExt::shell(app).open(url, None);
+				let _ = tauri_plugin_opener::open_url(url, None::<&str>);
 			}
 			_ => {}
 		})
@@ -241,6 +244,7 @@ pub async fn run() {
 		tauri::RunEvent::WindowEvent { event, .. } => match event {
 			tauri::WindowEvent::CloseRequested { api: _api, .. } => {
 				#[cfg(target_os = "macos")]
+				#[allow(deprecated)]
 				{
 					// hide the application
 					// manual for now (PR https://github.com/tauri-apps/tauri/pull/3689)

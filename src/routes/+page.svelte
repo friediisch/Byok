@@ -1,6 +1,12 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte'
-	import * as c from '../../bindings'
+	import { commands as c, type Chats, type Message, type Model, type Settings, type Result } from '../../bindings'
+	
+	// Helper to unwrap Result types from the new bindings format
+	function unwrap<T>(result: Result<T, string>): T {
+		if (result.status === "ok") return result.data
+		throw new Error(result.error)
+	}
 	import { v4 as uuidv4 } from 'uuid'
 	import Icon from '@iconify/svelte'
 	import { checkShortcut } from '$lib/general'
@@ -9,8 +15,8 @@
 	import { listen, type Event as TauriEvent } from '@tauri-apps/api/event'
 	import { availableModelsStore, availableProvidersStore } from '$lib/stores'
 
-	let chats: c.Chats = []
-	let currentChatMessages: c.Message[]
+	let chats: Chats = []
+	let currentChatMessages: Message[]
 	$: currentChatMessages = []
 	let selectedChatId: string
 	let newChatId: string
@@ -19,20 +25,20 @@
 		inputText.trim() === '' ||
 		currentChatMessages[currentChatMessages.length - 1]?.role === 'animate'
 	let modelSelectorOpen: boolean = false
-	let selectedModel: c.Model
+	let selectedModel: Model
 	let selectedModelName: string = ''
 	let showSettings: boolean = false
-	let settings: c.Settings
+	let settings: Settings
 	let showContextMenu: boolean = false
 	let renamingChatId: string = ''
 	let chatRenameContainer: HTMLElement
 
 	onMount(async () => {
-		await c.readApiKeysFromEnv()
-		chats = await c.getChats()
-		availableModelsStore.set(await c.getModels())
-		settings = await c.getSettings()
-		availableProvidersStore.set(await c.loadProviders())
+		unwrap(await c.readApiKeysFromEnv())
+		chats = unwrap(await c.getChats())
+		availableModelsStore.set(unwrap(await c.getModels()))
+		settings = unwrap(await c.getSettings())
+		availableProvidersStore.set(unwrap(await c.loadProviders()))
 		if (settings.default_model in $availableModelsStore) {
 			selectedModel = $availableModelsStore.find(
 				(model) =>
@@ -85,7 +91,7 @@
 			selectedModel.provider_name,
 			selectedModel.model_name,
 		)
-		chats = await c.getChats()
+		chats = unwrap(await c.getChats())
 	}
 
 	async function setFocus() {
@@ -97,13 +103,13 @@
 		newChatId = uuidv4()
 		setFocus()
 		selectedChatId = newChatId
-		currentChatMessages = await c.loadChat(selectedChatId)
+		currentChatMessages = unwrap(await c.loadChat(selectedChatId))
 	}
 
 	async function frontendLoadChat(new_selectedChatId: string) {
 		setFocus()
 		selectedChatId = new_selectedChatId
-		currentChatMessages = await c.loadChat(selectedChatId)
+		currentChatMessages = unwrap(await c.loadChat(selectedChatId))
 		if (currentChatMessages[currentChatMessages.length - 1]?.role === 'user') {
 			currentChatMessages = [
 				...currentChatMessages,
@@ -140,14 +146,14 @@
 	}
 
 	async function handleNewMessage(event: TauriEvent<string>) {
-		chats = await c.getChats()
+		chats = unwrap(await c.getChats())
 		if (event.payload == selectedChatId) {
 			frontendLoadChat(selectedChatId)
 		}
 	}
 
 	async function handleNewChat(event: TauriEvent<string>) {
-		chats = await c.getChats()
+		chats = unwrap(await c.getChats())
 	}
 </script>
 
@@ -266,7 +272,7 @@
 									on:mousedown={async () => {
 										showContextMenu = false
 										c.archiveChat(chat.id)
-										chats = await c.getChats()
+										chats = unwrap(await c.getChats())
 										frontendLoadChat(chats[0].id)
 									}}
 									role="button"
@@ -280,7 +286,7 @@
 									on:mousedown={async () => {
 										showContextMenu = false
 										c.deleteChat(chat.id)
-										chats = await c.getChats()
+										chats = unwrap(await c.getChats())
 										frontendLoadChat(chats[0].id)
 									}}
 									role="button"

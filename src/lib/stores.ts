@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store'
-import * as c from '../../bindings'
+import type { Models, ProviderData } from '../../bindings'
 
-export const availableModelsStore = writable<c.Models>([])
-export const availableProvidersStore = writable<c.ProviderData[]>([])
+export const availableModelsStore = writable<Models>([])
+export const availableProvidersStore = writable<ProviderData[]>([])
