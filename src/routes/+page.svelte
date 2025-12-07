@@ -6,7 +6,7 @@
 	import { checkShortcut } from '$lib/general'
 	import SettingsModal from '$lib/modals/Settings.svelte'
 	import 'prismjs/themes/prism-funky.css'
-	import { type Event as TauriEvent, listen } from '@tauri-apps/api/event'
+	import { listen, type Event as TauriEvent } from '@tauri-apps/api/event'
 	import { availableModelsStore, availableProvidersStore } from '$lib/stores'
 
 	let chats: c.Chats = []
@@ -152,7 +152,7 @@
 </script>
 
 <svelte:window on:keydown={keydown} />
-<body class="flex h-screen bg-chat-window-gray text-white overflow-y-auto">
+<main class="flex h-screen bg-chat-window-gray text-white overflow-y-auto">
 	<SettingsModal bind:show={showSettings} />
 	<div
 		class="flex flex-col min-w-72 max-w-96 bg-sidebar-gray overflow-y-auto overscroll-contain h-screen px-4 pt-6"
@@ -212,7 +212,9 @@
 										c.renameChat(chat.id, chat.display_name)
 										renamingChatId = ''
 									}}
-								/>
+									rows="1"
+									style="resize: none;"
+								></textarea>
 							{:else}
 								<div
 									class="flex flex-grow break-all"
@@ -487,7 +489,7 @@
 			</form>
 		</div>
 	</div>
-</body>
+</main>
 
 <style>
 	#display_name:hover + #model_name {

@@ -1,6 +1,5 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+@config '../tailwind.config.js';
 
 .text-gradient {
 	background: linear-gradient(to right, #5f8bfb, #f9f9f9);

@@ -5,11 +5,7 @@ node_modules
 /package
 .env
 .env.*
-*.app
-*.pkg
-tmp.json
-embedded.provisionprofile
-
-/src-tauri/target
-/src-tauri/WixTools
-/src-tauri/appdata
+!.env.example
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+.vscode
