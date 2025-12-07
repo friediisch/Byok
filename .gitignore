@@ -9,3 +9,11 @@ node_modules
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vscode
+*.app
+*.pkg
+tmp.json
+embedded.provisionprofile
+
+/src-tauri/target
+/src-tauri/WixTools
+/src-tauri/appdata
