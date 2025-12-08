@@ -1,68 +1,46 @@
 {
-	"$schema": "../node_modules/@tauri-apps/cli/schema.json",
-	"build": {
-		"distDir": "../build",
-		"devPath": "http://localhost:9000",
-		"beforeDevCommand": "npm run dev:web",
-		"beforeBuildCommand": "npm run build:web"
-	},
-	"package": {
-		"productName": "byok",
-		"version": "1.0.0"
-	},
-	"tauri": {
-		"bundle": {
-			"active": true,
-			"targets": ["dmg", "app"],
-			"identifier": "com.byok.byok",
-			"icon": [
-				"icons/32x32.png",
-				"icons/128x128.png",
-				"icons/128x128@2x.png",
-				"icons/icon.icns",
-				"icons/icon.ico"
-			],
-			"resources": [],
-			"externalBin": [],
-			"copyright": "© 2024 Byok",
-			"category": "Utility",
-			"shortDescription": "App for chat completions via API",
-			"longDescription": "App for chat completions via API",
-			"deb": {
-				"depends": []
-			},
-			"macOS": {
-				"frameworks": [],
-				"minimumSystemVersion": "10.13",
-				"exceptionDomain": "",
-				"signingIdentity": null,
-				"entitlements": "entitlements.plist"
-			},
-			"windows": {
-				"certificateThumbprint": null,
-				"digestAlgorithm": "sha256",
-				"timestampUrl": ""
-			}
-		},
-		"updater": {
-			"active": false
-		},
-		"allowlist": {
-			"dialog": {
-				"message": true
-			},
-			"notification": {
-				"all": true
-			},
-			"shell": {
-				"open": true
-			},
-			"path": {
-				"all": true
-			}
-		},
-		"security": {
-			"csp": "default-src 'self'; img-src *; style-src 'unsafe-inline' *"
-		}
-	}
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Byok",
+  "version": "1.0.0",
+  "identifier": "com.byok.byok",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../build"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Byok",
+        "width": 2560,
+        "height": 1600,
+        "minWidth": 400,
+        "minHeight": 400,
+        "titleBarStyle": "Transparent"
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src *; style-src 'unsafe-inline' *"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["dmg", "app"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "category": "Utility",
+    "shortDescription": "App for chat completions via API",
+    "longDescription": "App for chat completions via API",
+    "macOS": {
+      "minimumSystemVersion": "10.13"
+    }
+  },
+  "plugins": {}
 }

@@ -88,6 +88,7 @@ impl LLMProvider for AnthropicProvider {
 			presence_penalty: None,
 			functions: None,
 			function_call_behavior: None,
+			stream_usage: None,
 		};
 
 		println!("body: {:?}", body);

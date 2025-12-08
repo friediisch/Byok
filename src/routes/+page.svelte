@@ -1,16 +1,22 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte'
-	import * as c from '../../bindings'
+	import { commands as c, type Chats, type Message, type Model, type Settings, type Result } from '../../bindings'
+	
+	// Helper to unwrap Result types from the new bindings format
+	function unwrap<T>(result: Result<T, string>): T {
+		if (result.status === "ok") return result.data
+		throw new Error(result.error)
+	}
 	import { v4 as uuidv4 } from 'uuid'
 	import Icon from '@iconify/svelte'
 	import { checkShortcut } from '$lib/general'
 	import SettingsModal from '$lib/modals/Settings.svelte'
 	import 'prismjs/themes/prism-funky.css'
-	import { type Event as TauriEvent, listen } from '@tauri-apps/api/event'
+	import { listen, type Event as TauriEvent } from '@tauri-apps/api/event'
 	import { availableModelsStore, availableProvidersStore } from '$lib/stores'
 
-	let chats: c.Chats = []
-	let currentChatMessages: c.Message[]
+	let chats: Chats = []
+	let currentChatMessages: Message[]
 	$: currentChatMessages = []
 	let selectedChatId: string
 	let newChatId: string
@@ -19,20 +25,21 @@
 		inputText.trim() === '' ||
 		currentChatMessages[currentChatMessages.length - 1]?.role === 'animate'
 	let modelSelectorOpen: boolean = false
-	let selectedModel: c.Model
+	let selectedModel: Model
 	let selectedModelName: string = ''
 	let showSettings: boolean = false
-	let settings: c.Settings
+	let settings: Settings
 	let showContextMenu: boolean = false
 	let renamingChatId: string = ''
 	let chatRenameContainer: HTMLElement
+	let cmdHeld: boolean = false
 
 	onMount(async () => {
-		await c.readApiKeysFromEnv()
-		chats = await c.getChats()
-		availableModelsStore.set(await c.getModels())
-		settings = await c.getSettings()
-		availableProvidersStore.set(await c.loadProviders())
+		unwrap(await c.readApiKeysFromEnv())
+		chats = unwrap(await c.getChats())
+		availableModelsStore.set(unwrap(await c.getModels()))
+		settings = unwrap(await c.getSettings())
+		availableProvidersStore.set(unwrap(await c.loadProviders()))
 		if (settings.default_model in $availableModelsStore) {
 			selectedModel = $availableModelsStore.find(
 				(model) =>
@@ -46,6 +53,8 @@
 		newChat()
 		const unsubscribe_newMessage = listen<string>('newMessage', handleNewMessage)
 		const unsubscribe_newChat = listen<string>('newChat', handleNewChat)
+		const unsubscribe_menuNewChat = listen('menuNewChat', () => newChat())
+		const unsubscribe_menuOpenSettings = listen('menuOpenSettings', () => showSettings = true)
 
 		// Add click event listener to close model selector
 		document.addEventListener('click', handleOutsideClick)
@@ -66,8 +75,32 @@
 	}
 
 	async function keydown(e: KeyboardEvent) {
+		const isMac = navigator.userAgent.indexOf('Mac') != -1
+		const cmdOrCtrl = isMac ? e.metaKey : e.ctrlKey
+
+		if (cmdOrCtrl) {
+			cmdHeld = true
+		}
+
 		if (checkShortcut(e, 'N', { cmdOrCtrl: true })) {
 			newChat()
+		}
+
+		// Handle Cmd+1 through Cmd+9 for quick chat switching
+		if (cmdOrCtrl && e.key >= '1' && e.key <= '9') {
+			const index = parseInt(e.key) - 1
+			if (index < chats.length) {
+				e.preventDefault()
+				inputText = ''
+				frontendLoadChat(chats[index].id)
+			}
+		}
+	}
+
+	function keyup(e: KeyboardEvent) {
+		const isMac = navigator.userAgent.indexOf('Mac') != -1
+		if ((isMac && e.key === 'Meta') || (!isMac && e.key === 'Control')) {
+			cmdHeld = false
 		}
 	}
 
@@ -85,7 +118,7 @@
 			selectedModel.provider_name,
 			selectedModel.model_name,
 		)
-		chats = await c.getChats()
+		chats = unwrap(await c.getChats())
 	}
 
 	async function setFocus() {
@@ -97,13 +130,13 @@
 		newChatId = uuidv4()
 		setFocus()
 		selectedChatId = newChatId
-		currentChatMessages = await c.loadChat(selectedChatId)
+		currentChatMessages = unwrap(await c.loadChat(selectedChatId))
 	}
 
 	async function frontendLoadChat(new_selectedChatId: string) {
 		setFocus()
 		selectedChatId = new_selectedChatId
-		currentChatMessages = await c.loadChat(selectedChatId)
+		currentChatMessages = unwrap(await c.loadChat(selectedChatId))
 		if (currentChatMessages[currentChatMessages.length - 1]?.role === 'user') {
 			currentChatMessages = [
 				...currentChatMessages,
@@ -140,19 +173,19 @@
 	}
 
 	async function handleNewMessage(event: TauriEvent<string>) {
-		chats = await c.getChats()
+		chats = unwrap(await c.getChats())
 		if (event.payload == selectedChatId) {
 			frontendLoadChat(selectedChatId)
 		}
 	}
 
 	async function handleNewChat(event: TauriEvent<string>) {
-		chats = await c.getChats()
+		chats = unwrap(await c.getChats())
 	}
 </script>
 
-<svelte:window on:keydown={keydown} />
-<body class="flex h-screen bg-chat-window-gray text-white overflow-y-auto">
+<svelte:window on:keydown={keydown} on:keyup={keyup} on:blur={() => cmdHeld = false} />
+<main class="flex h-screen bg-chat-window-gray text-white overflow-y-auto">
 	<SettingsModal bind:show={showSettings} />
 	<div
 		class="flex flex-col min-w-72 max-w-96 bg-sidebar-gray overflow-y-auto overscroll-contain h-screen px-4 pt-6"
@@ -161,7 +194,7 @@
 		<hr class="my-4" />
 		<div class="overflow-y-auto flex-1">
 			<div
-				class="p-2 m-2 rounded-md flex flex-row justify-between
+				class="relative p-2 m-2 rounded-md flex flex-row justify-between
 				{selectedChatId === newChatId ? 'bg-gray-600' : 'hover:bg-gray-800'}"
 				on:mousedown={() => newChat()}
 				role="button"
@@ -169,16 +202,22 @@
 				tabindex="0"
 			>
 				<div>New Chat</div>
-				<Icon
-					icon="octicon:comment-discussion-16"
-					class="mt-1 mr-2 scale-125"
-					style="color: white"
-				/>
+				{#if cmdHeld}
+					<div class="absolute right-2 top-1/2 -translate-y-1/2 bg-gray-500 text-white text-xs font-mono px-1.5 py-0.5 rounded">
+						N
+					</div>
+				{:else}
+					<Icon
+						icon="octicon:comment-discussion-16"
+						class="mt-1 mr-2 scale-125"
+						style="color: white"
+					/>
+				{/if}
 			</div>
 
-			{#each chats as chat}
+			{#each chats as chat, i}
 				<div
-					class="block p-2 mx-2 rounded-md group
+					class="relative block p-2 mx-2 rounded-md group
 					{chat.id === selectedChatId ? 'bg-gray-600' : 'hover:bg-gray-800'}"
 					on:mousedown={() => {
 						inputText = ''
@@ -188,6 +227,11 @@
 					aria-pressed="false"
 					tabindex="0"
 				>
+					{#if cmdHeld && i < 9}
+						<div class="absolute right-2 top-1/2 -translate-y-1/2 bg-gray-500 text-white text-xs font-mono px-1.5 py-0.5 rounded">
+							{i + 1}
+						</div>
+					{/if}
 					{#if chat.display_name.startsWith('unnamed_new_chat_')}
 						<div
 							class="block p-2 mx-2 animate-ping rounded-full self-center self-middle size-4 bg-white opacity-100"
@@ -212,7 +256,9 @@
 										c.renameChat(chat.id, chat.display_name)
 										renamingChatId = ''
 									}}
-								/>
+									rows="1"
+									style="resize: none;"
+								></textarea>
 							{:else}
 								<div
 									class="flex flex-grow break-all"
@@ -264,7 +310,7 @@
 									on:mousedown={async () => {
 										showContextMenu = false
 										c.archiveChat(chat.id)
-										chats = await c.getChats()
+										chats = unwrap(await c.getChats())
 										frontendLoadChat(chats[0].id)
 									}}
 									role="button"
@@ -278,7 +324,7 @@
 									on:mousedown={async () => {
 										showContextMenu = false
 										c.deleteChat(chat.id)
-										chats = await c.getChats()
+										chats = unwrap(await c.getChats())
 										frontendLoadChat(chats[0].id)
 									}}
 									role="button"
@@ -487,7 +533,7 @@
 			</form>
 		</div>
 	</div>
-</body>
+</main>
 
 <style>
 	#display_name:hover + #model_name {

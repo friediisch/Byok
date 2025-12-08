@@ -21,11 +21,15 @@ impl Settings {
 			Ok(settings) => settings,
 			Err(_) => {
 				let default_settings = Settings {
-					default_model: "claude-3-opus-20240229".to_string(),
+					default_model: "claude-3-5-sonnet-latest".to_string(),
 					default_provider: "anthropic".to_string(),
 					code_theme: "base16-eighties.dark".to_string(),
 				};
 				let settings = serde_json::to_string(&default_settings).unwrap();
+				// Create directory if it doesn't exist
+				if let Some(parent) = settings_file.parent() {
+					std::fs::create_dir_all(parent).unwrap();
+				}
 				std::fs::write(settings_file, &settings).unwrap();
 				settings
 			}
@@ -34,6 +38,10 @@ impl Settings {
 	}
 	pub fn save(&self, settings_file: &PathBuf) {
 		let settings = serde_json::to_string(&self).unwrap();
+		// Create directory if it doesn't exist
+		if let Some(parent) = settings_file.parent() {
+			std::fs::create_dir_all(parent).unwrap();
+		}
 		std::fs::write(settings_file, &settings).unwrap();
 	}
 }

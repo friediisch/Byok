@@ -1,13 +1,19 @@
 <script lang="ts">
 	import Modal from 'modal-svelte'
-	import * as c from '../../../bindings'
+	import { commands as c, type Settings, type Result } from '../../../bindings'
+	
+	// Helper to unwrap Result types from the new bindings format
+	function unwrap<T>(result: Result<T, string>): T {
+		if (result.status === "ok") return result.data
+		throw new Error(result.error)
+	}
 	import { onMount } from 'svelte'
 	import Icon from '@iconify/svelte'
 	import { availableModelsStore, availableProvidersStore } from '$lib/stores'
 	export let show: boolean = false
 
 	let currentView: string
-	let settings: c.Settings
+	let settings: Settings
 	const themes = [
 		'InspiredGitHub',
 		'Solarized (dark)',
@@ -18,8 +24,8 @@
 		'base16-ocean.light',
 	]
 	onMount(async () => {
-		availableProvidersStore.set(await c.loadProviders())
-		settings = await c.getSettings()
+		availableProvidersStore.set(unwrap(await c.loadProviders()))
+		settings = unwrap(await c.getSettings())
 	})
 	// if show is set to true, set current view to menu
 	$: if (show) {
@@ -27,9 +33,9 @@
 	}
 
 	async function updateApiKey(provider: any) {
-		await c.setApiKey(provider)
-		availableModelsStore.set(await c.getModels())
-		availableProvidersStore.set(await c.loadProviders())
+		unwrap(await c.setApiKey(provider))
+		availableModelsStore.set(unwrap(await c.getModels()))
+		availableProvidersStore.set(unwrap(await c.loadProviders()))
 	}
 
 	let typingTimeout: NodeJS.Timeout | null = null

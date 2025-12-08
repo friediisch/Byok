@@ -1,5 +1,5 @@
-pub mod groqcloud;
-pub mod mistralai;
+// pub mod groqcloud;
+// pub mod mistralai;
 
 use langchain_rust::memory::SimpleMemory;
 use langchain_rust::schemas::messages::Message as LangChainMessage;
@@ -7,7 +7,7 @@ use langchain_rust::schemas::BaseMemory;
 use serde::{Deserialize, Serialize};
 use specta::Type;
 use sqlx::prelude::FromRow;
-use tauri::command;
+use tauri::{command, Emitter};
 
 use crate::db::get_api_key;
 use crate::llm_providers::{LLMConfig, LLMProvider, Provider};
@@ -143,7 +143,7 @@ pub async fn get_message(msg: String, chat_id: String, provider_name: String, mo
 						id: "".to_string(),
 						role: "user".to_string(),
 						content: format!(
-							"Please respond with the topic of the thread for these two messages:
+							"Based on the following conversation, create a short and descriptive title (3–6 words) that summarizes the main topic or purpose of the exchange:
 								'user': '{msg}',
 								'assistant': '{answer}'
 								Your response will be used to name the chat, therefore omit any other content from your response, keep it short and use the language used in the prompt.

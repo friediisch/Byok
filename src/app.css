@@ -1,11 +1,15 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config '../tailwind.config.js';
+
+/* Fix for dialog centering - Tailwind's Preflight resets margin:auto */
+dialog {
+  margin: auto;
+}
 
 .text-gradient {
-	background: linear-gradient(to right, #5f8bfb, #f9f9f9);
-	-webkit-background-clip: text;
-	background-clip: text;
-	text-fill-color: transparent; /* Fallback for Safari */
-	color: transparent;
+  background: linear-gradient(to right, #5f8bfb, #f9f9f9);
+  -webkit-background-clip: text;
+  background-clip: text;
+  text-fill-color: transparent; /* Fallback for Safari */
+  color: transparent;
 }

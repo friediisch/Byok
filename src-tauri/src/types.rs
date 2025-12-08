@@ -14,34 +14,8 @@ pub struct Message {
 	pub blocks: Option<MessageBlocks>,
 }
 
-// impl fmt::Display for Message {
-// 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-// 		write!(f, "{}", self.content)
-// 	}
-// }
-
-// impl Message {
-// 	pub fn render(&self, provider_name: &str) -> Value {
-// 		match provider_name {
-// 			"openai" => {
-// 				serde_json::json!({
-// 					"role": self.role,
-// 					"content": self.content
-// 				})
-// 			}
-// 			_ => serde_json::Value::Null,
-// 		}
-// 	}
-// }
-
 #[derive(Deref, Serialize)]
 pub struct MessageHistory(pub Vec<Message>);
-
-// impl Into<String> for MessageHistory {
-// 	fn into(self) -> String {
-// 		serde_json::to_string(&self).unwrap()
-// 	}
-// }
 
 #[derive(Serialize, Deserialize, Debug, FromRow, Type, Clone)]
 pub struct MessageBlock {
