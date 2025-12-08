@@ -4,7 +4,7 @@
 
 use dotenv::dotenv;
 use tauri::menu::{MenuBuilder, MenuItem, PredefinedMenuItem, SubmenuBuilder};
-use tauri::{command, Manager};
+use tauri::{command, Emitter, Manager};
 use tauri_plugin_dialog::DialogExt;
 
 mod data;
@@ -230,7 +230,10 @@ pub async fn run() {
 
 			Ok(menu)
 		})
-		.on_menu_event(|_app, event| match event.id().as_ref() {
+		.on_menu_event(|app, event| match event.id().as_ref() {
+			"new_chat" => {
+				let _ = app.emit("menuNewChat", ());
+			}
 			"learn_more" => {
 				let url = "https://github.com/friediisch/GenHub";
 				let _ = tauri_plugin_opener::open_url(url, None::<&str>);

@@ -52,6 +52,7 @@
 		newChat()
 		const unsubscribe_newMessage = listen<string>('newMessage', handleNewMessage)
 		const unsubscribe_newChat = listen<string>('newChat', handleNewChat)
+		const unsubscribe_menuNewChat = listen('menuNewChat', () => newChat())
 
 		// Add click event listener to close model selector
 		document.addEventListener('click', handleOutsideClick)
