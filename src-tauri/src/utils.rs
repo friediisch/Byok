@@ -183,9 +183,3 @@ pub fn escape_html_tags(input: String) -> String {
 	let escaped = re.replace_all(&input, "&lt;$1&gt;");
 	escaped.to_string()
 }
-
-#[cfg(debug_assertions)]
-#[allow(dead_code)]
-pub fn dev_print<T: std::fmt::Display>(msg: T) {
-	println!("{}", msg);
-}
