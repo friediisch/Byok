@@ -32,6 +32,7 @@
 	let showContextMenu: boolean = false
 	let renamingChatId: string = ''
 	let chatRenameContainer: HTMLElement
+	let cmdHeld: boolean = false
 
 	onMount(async () => {
 		unwrap(await c.readApiKeysFromEnv())
@@ -73,8 +74,32 @@
 	}
 
 	async function keydown(e: KeyboardEvent) {
+		const isMac = navigator.userAgent.indexOf('Mac') != -1
+		const cmdOrCtrl = isMac ? e.metaKey : e.ctrlKey
+
+		if (cmdOrCtrl) {
+			cmdHeld = true
+		}
+
 		if (checkShortcut(e, 'N', { cmdOrCtrl: true })) {
 			newChat()
+		}
+
+		// Handle Cmd+1 through Cmd+9 for quick chat switching
+		if (cmdOrCtrl && e.key >= '1' && e.key <= '9') {
+			const index = parseInt(e.key) - 1
+			if (index < chats.length) {
+				e.preventDefault()
+				inputText = ''
+				frontendLoadChat(chats[index].id)
+			}
+		}
+	}
+
+	function keyup(e: KeyboardEvent) {
+		const isMac = navigator.userAgent.indexOf('Mac') != -1
+		if ((isMac && e.key === 'Meta') || (!isMac && e.key === 'Control')) {
+			cmdHeld = false
 		}
 	}
 
@@ -158,7 +183,7 @@
 	}
 </script>
 
-<svelte:window on:keydown={keydown} />
+<svelte:window on:keydown={keydown} on:keyup={keyup} on:blur={() => cmdHeld = false} />
 <main class="flex h-screen bg-chat-window-gray text-white overflow-y-auto">
 	<SettingsModal bind:show={showSettings} />
 	<div
@@ -168,7 +193,7 @@
 		<hr class="my-4" />
 		<div class="overflow-y-auto flex-1">
 			<div
-				class="p-2 m-2 rounded-md flex flex-row justify-between
+				class="relative p-2 m-2 rounded-md flex flex-row justify-between
 				{selectedChatId === newChatId ? 'bg-gray-600' : 'hover:bg-gray-800'}"
 				on:mousedown={() => newChat()}
 				role="button"
@@ -176,16 +201,22 @@
 				tabindex="0"
 			>
 				<div>New Chat</div>
-				<Icon
-					icon="octicon:comment-discussion-16"
-					class="mt-1 mr-2 scale-125"
-					style="color: white"
-				/>
+				{#if cmdHeld}
+					<div class="absolute right-2 top-1/2 -translate-y-1/2 bg-gray-500 text-white text-xs font-mono px-1.5 py-0.5 rounded">
+						N
+					</div>
+				{:else}
+					<Icon
+						icon="octicon:comment-discussion-16"
+						class="mt-1 mr-2 scale-125"
+						style="color: white"
+					/>
+				{/if}
 			</div>
 
-			{#each chats as chat}
+			{#each chats as chat, i}
 				<div
-					class="block p-2 mx-2 rounded-md group
+					class="relative block p-2 mx-2 rounded-md group
 					{chat.id === selectedChatId ? 'bg-gray-600' : 'hover:bg-gray-800'}"
 					on:mousedown={() => {
 						inputText = ''
@@ -195,6 +226,11 @@
 					aria-pressed="false"
 					tabindex="0"
 				>
+					{#if cmdHeld && i < 9}
+						<div class="absolute right-2 top-1/2 -translate-y-1/2 bg-gray-500 text-white text-xs font-mono px-1.5 py-0.5 rounded">
+							{i + 1}
+						</div>
+					{/if}
 					{#if chat.display_name.startsWith('unnamed_new_chat_')}
 						<div
 							class="block p-2 mx-2 animate-ping rounded-full self-center self-middle size-4 bg-white opacity-100"
