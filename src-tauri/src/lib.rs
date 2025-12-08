@@ -234,6 +234,9 @@ pub async fn run() {
 			"new_chat" => {
 				let _ = app.emit("menuNewChat", ());
 			}
+			"preferences" | "options" => {
+				let _ = app.emit("menuOpenSettings", ());
+			}
 			"learn_more" => {
 				let url = "https://github.com/friediisch/GenHub";
 				let _ = tauri_plugin_opener::open_url(url, None::<&str>);
