@@ -22,7 +22,8 @@
     "@tauri-apps/plugin-opener": "^2",
     "modal-svelte": "^1.4.0",
     "prismjs": "^1.30.0",
-    "tailwindcss": "^4.1.17"
+    "tailwindcss": "^4.1.17",
+    "uuid": "^11.0.3"
   },
   "devDependencies": {
     "@iconify-json/lucide": "^1.2.79",

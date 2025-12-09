@@ -56,6 +56,38 @@ async getModels() : Promise<Result<Models, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+async getAllModels() : Promise<Result<Models, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_all_models") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async addModel(model: Model) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("add_model", { model }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async updateModel(model: Model) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("update_model", { model }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async deleteModel(providerName: string, modelName: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("delete_model", { providerName, modelName }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async readApiKeysFromEnv() : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("read_api_keys_from_env") };

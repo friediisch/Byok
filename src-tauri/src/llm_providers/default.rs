@@ -105,7 +105,7 @@ impl LLMProvider for DefaultProvider {
 			"model": model,
 			"messages": openai_messages,
 			"temperature": config.temperature,
-			"max_tokens": config.max_tokens
+			"max_completion_tokens": config.max_tokens
 		});
 
 		log::debug!("Sending message to OpenAI: {:?}", body);
