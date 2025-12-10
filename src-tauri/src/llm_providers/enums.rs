@@ -1,42 +1,99 @@
-use anyhow::Result;
-// use async_trait::async_trait;
+use anyhow::{anyhow, Result};
+use llm::{
+	builder::{LLMBackend, LLMBuilder},
+	chat::ChatMessage,
+	LLMProvider,
+};
 
-use crate::llm_providers::anthropic::AnthropicProvider;
-use crate::llm_providers::default::DefaultProvider;
 use crate::types::MessageHistory;
 
-use super::{LLMConfig, LLMProvider};
+use super::LLMConfig;
 
-#[derive(Clone)]
+/// Supported LLM providers
+#[derive(Clone, Debug)]
 pub enum Provider {
-	Default(DefaultProvider),
-	Anthropic(AnthropicProvider),
-	// Mistral(MistralProvider),
-	// Groq(GroqProvider),
+	OpenAI { api_key: String },
+	Anthropic { api_key: String },
+	Groq { api_key: String },
+	Mistral { api_key: String },
+	Ollama { base_url: Option<String> },
 }
 
 impl Provider {
+	/// Create a new provider from a provider name and API key
 	pub fn new(provider_name: &str, api_key: &str) -> Self {
 		match provider_name {
-			"openai" => Self::Default(DefaultProvider::new(provider_name, api_key, "https://api.openai.com/v1/chat/completions")),
-			"anthropic" => Self::Anthropic(AnthropicProvider::new(api_key)),
+			"openai" => Self::OpenAI { api_key: api_key.to_string() },
+			"anthropic" => Self::Anthropic { api_key: api_key.to_string() },
+			"groq" => Self::Groq { api_key: api_key.to_string() },
+			"mistral" => Self::Mistral { api_key: api_key.to_string() },
+			"ollama" => Self::Ollama { base_url: None },
 			_ => panic!("Unsupported provider: {}", provider_name),
 		}
 	}
-}
 
-impl LLMProvider for Provider {
-	fn provider_name(&self) -> &str {
+	/// Get the provider name as a string
+	pub fn provider_name(&self) -> &str {
 		match self {
-			Provider::Default(p) => p.provider_name(),
-			Provider::Anthropic(p) => p.provider_name(),
+			Provider::OpenAI { .. } => "openai",
+			Provider::Anthropic { .. } => "anthropic",
+			Provider::Groq { .. } => "groq",
+			Provider::Mistral { .. } => "mistral",
+			Provider::Ollama { .. } => "ollama",
 		}
 	}
 
-	async fn send_message(&self, messages: &MessageHistory, model: &str, config: &LLMConfig) -> Result<String> {
-		match self {
-			Provider::Default(p) => p.send_message(messages, model, config).await,
-			Provider::Anthropic(p) => p.send_message(messages, model, config).await,
+	/// Send a message to the LLM provider and get a response
+	pub async fn send_message(&self, messages: &MessageHistory, model: &str, config: &LLMConfig) -> Result<String> {
+		// Build the LLM client based on provider type
+		let llm = self.build_llm(model, config)?;
+
+		// Convert MessageHistory to ChatMessage format
+		let chat_messages: Vec<ChatMessage> = messages
+			.iter()
+			.map(|msg| match msg.role.as_str() {
+				"user" => ChatMessage::user().content(&msg.content).build(),
+				"assistant" => ChatMessage::assistant().content(&msg.content).build(),
+				// For system messages, we'll use user with a prefix since system() may not exist
+				"system" => ChatMessage::user().content(&format!("[System]: {}", &msg.content)).build(),
+				_ => ChatMessage::user().content(&msg.content).build(),
+			})
+			.collect();
+
+		// Send the chat request
+		let response = llm.chat(&chat_messages).await.map_err(|e| anyhow!("{}", e))?;
+
+		// Extract the text from the response
+		response.text().map(|s| s.to_string()).ok_or_else(|| anyhow!("No response text from LLM"))
+	}
+
+	/// Build the LLM client with the appropriate backend and configuration
+	fn build_llm(&self, model: &str, config: &LLMConfig) -> Result<Box<dyn LLMProvider>> {
+		let mut builder = LLMBuilder::new();
+
+		// Configure backend and API key
+		builder = match self {
+			Provider::OpenAI { api_key } => builder.backend(LLMBackend::OpenAI).api_key(api_key),
+			Provider::Anthropic { api_key } => builder.backend(LLMBackend::Anthropic).api_key(api_key),
+			Provider::Groq { api_key } => builder.backend(LLMBackend::Groq).api_key(api_key),
+			Provider::Mistral { api_key } => builder.backend(LLMBackend::Mistral).api_key(api_key),
+			Provider::Ollama { base_url } => {
+				let b = builder.backend(LLMBackend::Ollama);
+				if let Some(url) = base_url {
+					b.base_url(url)
+				} else {
+					b
+				}
+			}
+		};
+
+		// Apply common configuration
+		builder = builder.model(model).temperature(config.temperature).max_tokens(config.max_tokens);
+
+		if let Some(top_p) = config.top_p {
+			builder = builder.top_p(top_p);
 		}
+
+		builder.build().map_err(|e| anyhow!("{}", e))
 	}
 }

@@ -1,16 +1,10 @@
-// pub mod groqcloud;
-// pub mod mistralai;
-
-use langchain_rust::memory::SimpleMemory;
-use langchain_rust::schemas::messages::Message as LangChainMessage;
-use langchain_rust::schemas::BaseMemory;
 use serde::{Deserialize, Serialize};
 use specta::Type;
 use sqlx::prelude::FromRow;
 use tauri::{command, Emitter};
 
 use crate::db::get_api_key;
-use crate::llm_providers::{LLMConfig, LLMProvider, Provider};
+use crate::llm_providers::{LLMConfig, Provider};
 use crate::{
 	data::DataState,
 	db::{get_chat_display_name, get_messages, insert_chat_display_name, insert_message, insert_message_blocks},
@@ -60,7 +54,7 @@ pub async fn get_message(msg: String, chat_id: String, provider_name: String, mo
 		}
 	}
 
-	if provider_name != "local" {
+	if provider_name != "local" && provider_name != "ollama" {
 		// Get the API key from the providers table
 		api_key = match get_api_key(&provider_name, data.clone()).await {
 			Ok(s) => s,
@@ -76,43 +70,9 @@ pub async fn get_message(msg: String, chat_id: String, provider_name: String, mo
 		}
 	};
 
-	// let prompt_args
-	let mut memory = SimpleMemory::new();
-	//for message in messages.messages.iter().take(messages.messages.len() - 1) {
-	for message in messages.iter().take(messages.len()) {
-		memory.add_message({
-			match message.role.as_str() {
-				"user" => LangChainMessage::new_human_message(message.content.clone()),
-				"assistant" => LangChainMessage::new_ai_message(message.content.clone()),
-				_ => {
-					panic!("Invalid message type: {}", message.role)
-				}
-			}
-		});
-	}
-
-	// let call_options = CallOptions {
-	// 	candidate_count: None,
-	// 	max_tokens: Some(4096),
-	// 	temperature: Some(0.7),
-	// 	stop_words: None,
-	// 	streaming_func: None,
-	// 	top_k: None,
-	// 	top_p: None,
-	// 	seed: None,
-	// 	min_length: None,
-	// 	max_length: None,
-	// 	n: None,
-	// 	repetition_penalty: None,
-	// 	frequency_penalty: None,
-	// 	presence_penalty: None,
-	// 	functions: None,
-	// 	function_call_behavior: None,
-	// };
-
 	let llm_config = LLMConfig::default();
 
-	// let llm: dyn LLMProvider = LLMProvider::new(&provider_name, api_key);
+	// Create the provider using graniet/llm
 	let llm = Provider::new(&provider_name, &api_key);
 
 	let answer = match llm.send_message(&messages, &model_name, &llm_config).await {
@@ -140,18 +100,18 @@ pub async fn get_message(msg: String, chat_id: String, provider_name: String, mo
 			match display_name.starts_with("unnamed_new_chat_") {
 				true => {
 					let display_name_messages: MessageHistory = MessageHistory(vec![Message {
-						id: "".to_string(),
-						role: "user".to_string(),
-						content: format!(
-							"Based on the following conversation, create a short and descriptive title (3–6 words) that summarizes the main topic or purpose of the exchange:
+                        id: "".to_string(),
+                        role: "user".to_string(),
+                        content: format!(
+                            "Based on the following conversation, create a short and descriptive title (3–6 words) that summarizes the main topic or purpose of the exchange:
 								'user': '{msg}',
 								'assistant': '{answer}'
 								Your response will be used to name the chat, therefore omit any other content from your response, keep it short and use the language used in the prompt.
 								Do not use quotation marks. Capitalize the first letter of your answer. It is okay if your answer consists of keywords, it does not need to be a complete sentence."
-						),
-						model_name: model_name.clone(),
-						blocks: None,
-					}]);
+                        ),
+                        model_name: model_name.clone(),
+                        blocks: None,
+                    }]);
 
 					let llm_config = LLMConfig {
 						temperature: 0.0,
@@ -181,10 +141,8 @@ pub async fn get_message(msg: String, chat_id: String, provider_name: String, mo
 						})?;
 					// emit event saying there are new chats
 					let _ = &data.0.lock().await.window.emit("newChat", ());
-					//let _ = data.window.emit("newMessage", &chat_id);
 				}
 				false => {
-					//let data = data.0.lock().await;
 					// update the last_updated field in the chats database to the current time
 					let update_last_updated_query: &str = "UPDATE chats SET last_updated = CURRENT_TIMESTAMP WHERE id = $1";
 					let _ = sqlx::query(update_last_updated_query)

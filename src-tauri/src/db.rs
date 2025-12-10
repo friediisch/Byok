@@ -10,7 +10,7 @@ use sqlx::{Row, Sqlite, SqlitePool};
 use tauri::command;
 
 use crate::data::{AppPaths, DataState};
-use crate::llm_providers::{LLMConfig, LLMProvider, Provider};
+use crate::llm_providers::{LLMConfig, Provider};
 use crate::providers::ProviderData;
 use crate::throw;
 use crate::types::{Chat, Chats, Message, MessageBlock, MessageBlocks, MessageHistory, Model, Models};
