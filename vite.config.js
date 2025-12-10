@@ -37,4 +37,7 @@ export default defineConfig(async () => ({
     sourcemap: true,
     target: ["chrome64", "edge79", "firefox62", "safari11.1"],
   },
+  ssr: {
+    noExternal: ["uuid"],
+  },
 }));
