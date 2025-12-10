@@ -219,8 +219,9 @@
 								<div class="text-md font-semibold mb-3">Add New Model</div>
 								<div class="space-y-3">
 									<div class="flex items-center gap-2">
-										<label class="w-32 text-sm">Provider:</label>
+										<label for="new-model-provider" class="w-32 text-sm">Provider:</label>
 										<select 
+											id="new-model-provider"
 											class="flex-1 bg-gray-800 text-white px-2 py-1 rounded border border-gray-600"
 											bind:value={newModel.provider_name}
 										>
@@ -230,8 +231,9 @@
 										</select>
 									</div>
 									<div class="flex items-center gap-2">
-										<label class="w-32 text-sm">Model Name:</label>
+										<label for="new-model-name" class="w-32 text-sm">Model Name:</label>
 										<input 
+											id="new-model-name"
 											type="text" 
 											class="flex-1 bg-gray-800 text-white px-2 py-1 rounded border border-gray-600"
 											placeholder="e.g. gpt-4o-mini"
@@ -239,8 +241,9 @@
 										/>
 									</div>
 									<div class="flex items-center gap-2">
-										<label class="w-32 text-sm">Display Name:</label>
+										<label for="new-model-display-name" class="w-32 text-sm">Display Name:</label>
 										<input 
+											id="new-model-display-name"
 											type="text" 
 											class="flex-1 bg-gray-800 text-white px-2 py-1 rounded border border-gray-600"
 											placeholder="e.g. GPT-4o Mini"
@@ -248,24 +251,27 @@
 										/>
 									</div>
 									<div class="flex items-center gap-2">
-										<label class="w-32 text-sm">Max Tokens:</label>
+										<label for="new-model-max-tokens" class="w-32 text-sm">Max Tokens:</label>
 										<input 
+											id="new-model-max-tokens"
 											type="number" 
 											class="flex-1 bg-gray-800 text-white px-2 py-1 rounded border border-gray-600"
 											bind:value={newModel.max_tokens}
 										/>
 									</div>
 									<div class="flex items-center gap-2">
-										<label class="w-32 text-sm">Context Window:</label>
+										<label for="new-model-context-window" class="w-32 text-sm">Context Window:</label>
 										<input 
+											id="new-model-context-window"
 											type="number" 
 											class="flex-1 bg-gray-800 text-white px-2 py-1 rounded border border-gray-600"
 											bind:value={newModel.context_window}
 										/>
 									</div>
 									<div class="flex items-center gap-2">
-										<label class="w-32 text-sm">Visible:</label>
+										<label for="new-model-visible" class="w-32 text-sm">Visible:</label>
 										<input 
+											id="new-model-visible"
 											type="checkbox" 
 											class="w-5 h-5"
 											bind:checked={newModel.show}
@@ -295,40 +301,44 @@
 								<div class="text-md font-semibold mb-3">Edit Model</div>
 								<div class="space-y-3">
 									<div class="flex items-center gap-2">
-										<label class="w-32 text-sm text-gray-400">Provider:</label>
+										<span class="w-32 text-sm text-gray-400">Provider:</span>
 										<span class="text-gray-300">{editingModel.provider_name}</span>
 									</div>
 									<div class="flex items-center gap-2">
-										<label class="w-32 text-sm text-gray-400">Model Name:</label>
+										<span class="w-32 text-sm text-gray-400">Model Name:</span>
 										<span class="text-gray-300">{editingModel.model_name}</span>
 									</div>
 									<div class="flex items-center gap-2">
-										<label class="w-32 text-sm">Display Name:</label>
+										<label for="edit-model-display-name" class="w-32 text-sm">Display Name:</label>
 										<input 
+											id="edit-model-display-name"
 											type="text" 
 											class="flex-1 bg-gray-800 text-white px-2 py-1 rounded border border-gray-600"
 											bind:value={editingModel.model_display_name}
 										/>
 									</div>
 									<div class="flex items-center gap-2">
-										<label class="w-32 text-sm">Max Tokens:</label>
+										<label for="edit-model-max-tokens" class="w-32 text-sm">Max Tokens:</label>
 										<input 
+											id="edit-model-max-tokens"
 											type="number" 
 											class="flex-1 bg-gray-800 text-white px-2 py-1 rounded border border-gray-600"
 											bind:value={editingModel.max_tokens}
 										/>
 									</div>
 									<div class="flex items-center gap-2">
-										<label class="w-32 text-sm">Context Window:</label>
+										<label for="edit-model-context-window" class="w-32 text-sm">Context Window:</label>
 										<input 
+											id="edit-model-context-window"
 											type="number" 
 											class="flex-1 bg-gray-800 text-white px-2 py-1 rounded border border-gray-600"
 											bind:value={editingModel.context_window}
 										/>
 									</div>
 									<div class="flex items-center gap-2">
-										<label class="w-32 text-sm">Visible:</label>
+										<label for="edit-model-visible" class="w-32 text-sm">Visible:</label>
 										<input 
+											id="edit-model-visible"
 											type="checkbox" 
 											class="w-5 h-5"
 											bind:checked={editingModel.show}
