@@ -2,7 +2,7 @@ name: Test
 on:
   push:
     branches:
-      - '*'
+      - "*"
   pull_request:
   workflow_dispatch:
 
@@ -11,7 +11,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [macos-latest, ubuntu-latest, windows-latest]
+        # Temporarily disable Ubuntu build, see: https://github.com/tauri-apps/tauri/issues/9662
+        # platform: [macos-latest, ubuntu-latest, windows-latest]
+        platform: [macos-latest, windows-latest]
     runs-on: ${{ matrix.platform }}
     steps:
       - name: Checkout repository
@@ -20,7 +22,7 @@ jobs:
       - name: Node.js setup
         uses: actions/setup-node@v4
         with:
-          node-version-file: '.node-version'
+          node-version-file: ".node-version"
 
       - name: Rust setup
         uses: dtolnay/rust-toolchain@stable
