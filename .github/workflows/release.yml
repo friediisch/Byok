@@ -12,7 +12,7 @@ jobs:
       matrix:
         # Temporarily disable Ubuntu build, see: https://github.com/tauri-apps/tauri/issues/9662
         # platform: [macos-latest, ubuntu-latest, windows-latest]
-        platform: [macos-latest, windows-latest]
+        platform: [macos-latest]
     runs-on: ${{ matrix.platform }}
     steps:
       - name: Checkout repository
