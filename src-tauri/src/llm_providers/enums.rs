@@ -21,14 +21,15 @@ pub enum Provider {
 
 impl Provider {
 	/// Create a new provider from a provider name and API key
-	pub fn new(provider_name: &str, api_key: &str) -> Self {
+	/// Handles multiple name variants (e.g., "mistral" and "mistralai")
+	pub fn new(provider_name: &str, api_key: &str) -> Result<Self> {
 		match provider_name {
-			"openai" => Self::OpenAI { api_key: api_key.to_string() },
-			"anthropic" => Self::Anthropic { api_key: api_key.to_string() },
-			"groq" => Self::Groq { api_key: api_key.to_string() },
-			"mistral" => Self::Mistral { api_key: api_key.to_string() },
-			"ollama" => Self::Ollama { base_url: None },
-			_ => panic!("Unsupported provider: {}", provider_name),
+			"openai" => Ok(Self::OpenAI { api_key: api_key.to_string() }),
+			"anthropic" => Ok(Self::Anthropic { api_key: api_key.to_string() }),
+			"groq" | "groqcloud" => Ok(Self::Groq { api_key: api_key.to_string() }),
+			"mistral" | "mistralai" => Ok(Self::Mistral { api_key: api_key.to_string() }),
+			"ollama" => Ok(Self::Ollama { base_url: None }),
+			_ => Err(anyhow!("Unsupported provider: {}", provider_name)),
 		}
 	}
 

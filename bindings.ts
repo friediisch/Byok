@@ -16,6 +16,9 @@ async getMessage(msg: string, chatId: string, providerName: string, modelName: s
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Get all non-archived chats, ordered by last updated
+ */
 async getChats() : Promise<Result<Chats, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_chats") };
@@ -24,6 +27,9 @@ async getChats() : Promise<Result<Chats, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Load all messages for a chat, including their rendered blocks
+ */
 async loadChat(chatId: string) : Promise<Result<Message[], string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("load_chat", { chatId }) };
@@ -32,6 +38,9 @@ async loadChat(chatId: string) : Promise<Result<Message[], string>> {
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Load all provider configurations
+ */
 async loadProviders() : Promise<Result<ProviderData[], string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("load_providers") };
@@ -40,6 +49,9 @@ async loadProviders() : Promise<Result<ProviderData[], string>> {
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Set and validate an API key for a provider
+ */
 async setApiKey(provider: ProviderData) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("set_api_key", { provider }) };
@@ -48,6 +60,9 @@ async setApiKey(provider: ProviderData) : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Get models that have valid API keys configured
+ */
 async getModels() : Promise<Result<Models, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_models") };
@@ -56,6 +71,9 @@ async getModels() : Promise<Result<Models, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Get all models regardless of API key status
+ */
 async getAllModels() : Promise<Result<Models, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_all_models") };
@@ -64,6 +82,9 @@ async getAllModels() : Promise<Result<Models, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Add a new model
+ */
 async addModel(model: Model) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("add_model", { model }) };
@@ -72,6 +93,9 @@ async addModel(model: Model) : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Update an existing model
+ */
 async updateModel(model: Model) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("update_model", { model }) };
@@ -80,6 +104,9 @@ async updateModel(model: Model) : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Delete a model
+ */
 async deleteModel(providerName: string, modelName: string) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("delete_model", { providerName, modelName }) };
@@ -88,6 +115,9 @@ async deleteModel(providerName: string, modelName: string) : Promise<Result<null
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Read API keys from environment variables (development mode only)
+ */
 async readApiKeysFromEnv() : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("read_api_keys_from_env") };
@@ -96,6 +126,9 @@ async readApiKeysFromEnv() : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Rename a chat
+ */
 async renameChat(chatId: string, newDisplayName: string) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("rename_chat", { chatId, newDisplayName }) };
@@ -104,6 +137,9 @@ async renameChat(chatId: string, newDisplayName: string) : Promise<Result<null, 
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Archive a chat (soft delete)
+ */
 async archiveChat(chatId: string) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("archive_chat", { chatId }) };
@@ -112,6 +148,9 @@ async archiveChat(chatId: string) : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Permanently delete a chat
+ */
 async deleteChat(chatId: string) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("delete_chat", { chatId }) };

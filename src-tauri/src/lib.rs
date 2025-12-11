@@ -9,13 +9,17 @@ use tauri_plugin_dialog::DialogExt;
 
 mod data;
 mod db;
+mod errors;
 mod llm_providers;
 mod providers;
 mod settings;
 mod types;
 mod utils;
 
-use crate::data::{AppPaths, ArcData, Data};
+pub use errors::{AppError, AppResult, ConfigError, DatabaseError, DbResult, ProviderError, ProviderResult};
+
+use crate::data::{AppPaths, AppSettings, ArcData, Data, DbPool, MainWindow, PathsState};
+use std::sync::Arc;
 
 fn error_popup_main_thread(msg: impl AsRef<str>) {
 	let msg = msg.as_ref().to_string();
@@ -55,19 +59,19 @@ pub async fn run() {
 		let specta_builder = tauri_specta::Builder::<tauri::Wry>::new().commands(tauri_specta::collect_commands![
 			error_popup,
 			providers::get_message,
-			db::get_chats,
-			db::load_chat,
-			db::load_providers,
-			db::set_api_key,
-			db::get_models,
-			db::get_all_models,
-			db::add_model,
-			db::update_model,
-			db::delete_model,
-			db::read_api_keys_from_env,
-			db::rename_chat,
-			db::archive_chat,
-			db::delete_chat,
+			db::chats::get_chats,
+			db::messages::load_chat,
+			db::providers_db::load_providers,
+			db::providers_db::set_api_key,
+			db::models::get_models,
+			db::models::get_all_models,
+			db::models::add_model,
+			db::models::update_model,
+			db::models::delete_model,
+			db::providers_db::read_api_keys_from_env,
+			db::chats::rename_chat,
+			db::chats::archive_chat,
+			db::chats::delete_chat,
 			settings::get_settings,
 			settings::apply_and_save_settings
 		]);
@@ -100,19 +104,19 @@ pub async fn run() {
 		.invoke_handler(tauri::generate_handler![
 			error_popup,
 			providers::get_message,
-			db::get_chats,
-			db::load_chat,
-			db::load_providers,
-			db::set_api_key,
-			db::get_models,
-			db::get_all_models,
-			db::add_model,
-			db::update_model,
-			db::delete_model,
-			db::read_api_keys_from_env,
-			db::rename_chat,
-			db::archive_chat,
-			db::delete_chat,
+			db::chats::get_chats,
+			db::messages::load_chat,
+			db::providers_db::load_providers,
+			db::providers_db::set_api_key,
+			db::models::get_models,
+			db::models::get_all_models,
+			db::models::add_model,
+			db::models::update_model,
+			db::models::delete_model,
+			db::providers_db::read_api_keys_from_env,
+			db::chats::rename_chat,
+			db::chats::archive_chat,
+			db::chats::delete_chat,
 			settings::get_settings,
 			settings::apply_and_save_settings
 		])
@@ -141,11 +145,20 @@ pub async fn run() {
 				}
 			}
 			let settings_path = &app_paths.settings_file.clone();
+			let loaded_settings = settings::Settings::load(settings_path);
+
+			// Register new separate states for better lock granularity
+			app.manage(DbPool(pool.clone()));
+			app.manage(AppSettings::new(loaded_settings.clone()));
+			app.manage(PathsState(app_paths.clone()));
+			app.manage(MainWindow(Arc::new(win.clone())));
+
+			// Also register combined state for backwards compatibility during migration
 			let data: Data = Data {
 				db_pool: pool.clone(),
 				paths: app_paths.clone(),
 				window: win.clone(),
-				settings: settings::Settings::load(&settings_path),
+				settings: loaded_settings,
 			};
 			app.manage(ArcData::new(data));
 
