@@ -17,3 +17,4 @@ embedded.provisionprofile
 /src-tauri/target
 /src-tauri/WixTools
 /src-tauri/appdata
+/src-tauri/.cargo/config.toml
