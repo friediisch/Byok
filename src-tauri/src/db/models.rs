@@ -4,7 +4,7 @@ use sqlx::SqlitePool;
 use tauri::command;
 
 use crate::data::DataState;
-use crate::types::{Model, Models};
+use crate::types::{Model, Models, ModelUpdate};
 
 /// Insert a model into the database if it doesn't already exist
 pub async fn insert_model(model: &Model, pool: &SqlitePool) -> Result<(), String> {
@@ -101,19 +101,37 @@ pub async fn add_model(model: Model, data: DataState<'_>) -> Result<(), String> 
 	}
 }
 
-/// Update an existing model
+/// Update an existing model (including provider_name and model_name changes)
 #[command]
 #[specta::specta]
-pub async fn update_model(model: Model, data: DataState<'_>) -> Result<(), String> {
+pub async fn update_model(update: ModelUpdate, data: DataState<'_>) -> Result<(), String> {
 	let data = data.0.lock().await;
-	let query = "UPDATE models SET model_display_name = $1, show = $2, max_tokens = $3, context_window = $4 WHERE provider_name = $5 AND model_name = $6";
+	let model = &update.model;
+
+	// Check if trying to change to a name that already exists
+	if update.original_provider_name != model.provider_name || update.original_model_name != model.model_name {
+		let exists = sqlx::query("SELECT id FROM models WHERE provider_name = $1 AND model_name = $2")
+			.bind(&model.provider_name)
+			.bind(&model.model_name)
+			.fetch_optional(&data.db_pool)
+			.await
+			.map_err(|e| format!("Error checking model existence: {}", e))?;
+
+		if exists.is_some() {
+			return Err("A model with this provider and name already exists".to_string());
+		}
+	}
+
+	let query = "UPDATE models SET provider_name = $1, model_name = $2, model_display_name = $3, show = $4, max_tokens = $5, context_window = $6 WHERE provider_name = $7 AND model_name = $8";
 	match sqlx::query(query)
+		.bind(&model.provider_name)
+		.bind(&model.model_name)
 		.bind(&model.model_display_name)
 		.bind(&model.show)
 		.bind(&model.max_tokens)
 		.bind(&model.context_window)
-		.bind(&model.provider_name)
-		.bind(&model.model_name)
+		.bind(&update.original_provider_name)
+		.bind(&update.original_model_name)
 		.execute(&data.db_pool)
 		.await
 	{

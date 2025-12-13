@@ -9,6 +9,39 @@ use crate::types::MessageHistory;
 
 use super::LLMConfig;
 
+/// Supported API schemes for custom providers
+#[derive(Clone, Debug)]
+pub enum ApiScheme {
+	OpenAI,
+	Anthropic,
+	Groq,
+	Mistral,
+	Ollama,
+}
+
+impl ApiScheme {
+	pub fn from_str(s: &str) -> Option<Self> {
+		match s.to_lowercase().as_str() {
+			"openai" => Some(Self::OpenAI),
+			"anthropic" => Some(Self::Anthropic),
+			"groq" => Some(Self::Groq),
+			"mistral" => Some(Self::Mistral),
+			"ollama" => Some(Self::Ollama),
+			_ => None,
+		}
+	}
+
+	pub fn to_backend(&self) -> LLMBackend {
+		match self {
+			Self::OpenAI => LLMBackend::OpenAI,
+			Self::Anthropic => LLMBackend::Anthropic,
+			Self::Groq => LLMBackend::Groq,
+			Self::Mistral => LLMBackend::Mistral,
+			Self::Ollama => LLMBackend::Ollama,
+		}
+	}
+}
+
 /// Supported LLM providers
 #[derive(Clone, Debug)]
 pub enum Provider {
@@ -17,6 +50,11 @@ pub enum Provider {
 	Groq { api_key: String },
 	Mistral { api_key: String },
 	Ollama { base_url: Option<String> },
+	Custom {
+		api_key: String,
+		base_url: String,
+		api_scheme: ApiScheme,
+	},
 }
 
 impl Provider {
@@ -33,6 +71,30 @@ impl Provider {
 		}
 	}
 
+	/// Create a custom provider with a specified API scheme and base URL
+	pub fn new_custom(api_key: &str, base_url: &str, api_scheme: &str) -> Result<Self> {
+		let scheme = ApiScheme::from_str(api_scheme)
+			.ok_or_else(|| anyhow!("Unsupported API scheme: {}", api_scheme))?;
+		Ok(Self::Custom {
+			api_key: api_key.to_string(),
+			base_url: base_url.to_string(),
+			api_scheme: scheme,
+		})
+	}
+
+	/// Create a provider from ProviderData, supporting both built-in and custom providers
+	pub fn from_provider_data(provider_name: &str, api_key: &str, base_url: Option<&str>, api_scheme: Option<&str>) -> Result<Self> {
+		// If base_url is provided, treat as custom provider
+		if let Some(url) = base_url {
+			if !url.is_empty() {
+				let scheme = api_scheme.unwrap_or("openai");
+				return Self::new_custom(api_key, url, scheme);
+			}
+		}
+		// Otherwise use built-in provider matching
+		Self::new(provider_name, api_key)
+	}
+
 	/// Get the provider name as a string
 	pub fn provider_name(&self) -> &str {
 		match self {
@@ -41,6 +103,7 @@ impl Provider {
 			Provider::Groq { .. } => "groq",
 			Provider::Mistral { .. } => "mistral",
 			Provider::Ollama { .. } => "ollama",
+			Provider::Custom { .. } => "custom",
 		}
 	}
 
@@ -85,6 +148,9 @@ impl Provider {
 				} else {
 					b
 				}
+			}
+			Provider::Custom { api_key, base_url, api_scheme } => {
+				builder.backend(api_scheme.to_backend()).api_key(api_key).base_url(base_url)
 			}
 		};
 

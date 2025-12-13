@@ -27,4 +27,4 @@ pub use messages::{get_messages, insert_message, insert_message_blocks, load_cha
 pub use models::{add_model, delete_model, get_all_models, get_models, update_model};
 
 // Re-export provider operations
-pub use providers_db::{get_api_key, load_providers, read_api_keys_from_env, set_api_key};
+pub use providers_db::{add_provider, delete_provider, get_api_key, load_providers, read_api_keys_from_env, set_api_key, update_provider};

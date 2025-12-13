@@ -56,6 +56,17 @@ pub struct Model {
 #[derive(Serialize, Deserialize, Debug, Type, FromRow, Clone, Deref)]
 pub struct Models(pub Vec<Model>);
 
+/// Used for updating a model, includes original keys to identify the model
+#[derive(Serialize, Deserialize, Debug, Type, Clone)]
+pub struct ModelUpdate {
+	/// Original provider name (for identifying the model to update)
+	pub original_provider_name: String,
+	/// Original model name (for identifying the model to update)
+	pub original_model_name: String,
+	/// Updated model data
+	pub model: Model,
+}
+
 #[derive(Serialize, Deserialize, Type, Debug, FromRow, Clone)]
 pub struct Chat {
 	pub id: String,

@@ -61,6 +61,39 @@ async setApiKey(provider: ProviderData) : Promise<Result<null, string>> {
 }
 },
 /**
+ * Add a new custom provider
+ */
+async addProvider(provider: ProviderData) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("add_provider", { provider }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Update an existing provider
+ */
+async updateProvider(provider: ProviderData) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("update_provider", { provider }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Delete a custom provider
+ */
+async deleteProvider(providerName: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("delete_provider", { providerName }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
  * Get models that have valid API keys configured
  */
 async getModels() : Promise<Result<Models, string>> {
@@ -94,11 +127,11 @@ async addModel(model: Model) : Promise<Result<null, string>> {
 }
 },
 /**
- * Update an existing model
+ * Update an existing model (including provider_name and model_name changes)
  */
-async updateModel(model: Model) : Promise<Result<null, string>> {
+async updateModel(update: ModelUpdate) : Promise<Result<null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("update_model", { model }) };
+    return { status: "ok", data: await TAURI_INVOKE("update_model", { update }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -193,8 +226,24 @@ export type Message = { id: string; role: string; content: string; model_name: s
 export type MessageBlock = { id: number | null; type_: string; language: string | null; raw_content: string; rendered_content: string; copied: boolean | null }
 export type MessageBlocks = MessageBlock[]
 export type Model = { provider_name: string; model_name: string; model_display_name: string; show: boolean; max_tokens: number; context_window: number }
+/**
+ * Used for updating a model, includes original keys to identify the model
+ */
+export type ModelUpdate = { 
+/**
+ * Original provider name (for identifying the model to update)
+ */
+original_provider_name: string; 
+/**
+ * Original model name (for identifying the model to update)
+ */
+original_model_name: string; 
+/**
+ * Updated model data
+ */
+model: Model }
 export type Models = Model[]
-export type ProviderData = { provider_name: string; api_key: string; display_name: string; api_key_valid: boolean }
+export type ProviderData = { provider_name: string; api_key: string; display_name: string; api_key_valid: boolean; base_url: string | null; api_scheme: string | null; is_custom: boolean }
 export type Settings = { default_model: string; default_provider: string; code_theme: string }
 
 /** tauri-specta globals **/

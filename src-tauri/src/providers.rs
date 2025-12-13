@@ -18,6 +18,9 @@ pub struct ProviderData {
 	pub api_key: String,
 	pub display_name: String,
 	pub api_key_valid: bool,
+	pub base_url: Option<String>,
+	pub api_scheme: Option<String>,
+	pub is_custom: bool,
 }
 
 /// Maximum length for auto-generated chat titles
@@ -63,12 +66,28 @@ async fn ensure_chat_exists(chat_id: &str, model_name: &str, data: DataState<'_>
 	}
 }
 
-/// Get API key for the provider (if needed)
-async fn get_provider_api_key(provider_name: &str, data: DataState<'_>) -> Result<String, String> {
+/// Get provider data for a specific provider
+async fn get_provider_data(provider_name: &str, data: DataState<'_>) -> Result<ProviderData, String> {
 	if provider_name == "local" || provider_name == "ollama" {
-		return Ok(String::new());
+		return Ok(ProviderData {
+			provider_name: provider_name.to_string(),
+			api_key: String::new(),
+			display_name: provider_name.to_string(),
+			api_key_valid: true,
+			base_url: None,
+			api_scheme: Some("ollama".to_string()),
+			is_custom: false,
+		});
 	}
-	get_api_key(provider_name, data).await
+	let query = "SELECT provider_name, api_key, display_name, api_key_valid, base_url, api_scheme, is_custom FROM providers WHERE provider_name = $1";
+	match sqlx::query_as::<_, ProviderData>(query)
+		.bind(provider_name)
+		.fetch_one(&data.0.lock().await.db_pool)
+		.await
+	{
+		Ok(provider) => Ok(provider),
+		Err(e) => Err(format!("Error fetching provider data for {}: {}", provider_name, e)),
+	}
 }
 
 /// Send message to LLM and get response
@@ -198,14 +217,19 @@ pub async fn get_message(msg: String, chat_id: String, provider_name: String, mo
 	// 2. Ensure chat exists
 	ensure_chat_exists(&chat_id, &model_name, data.clone()).await?;
 
-	// 3. Get API key
-	let api_key = get_provider_api_key(&provider_name, data.clone()).await?;
+	// 3. Get provider data (including API key, base_url, api_scheme)
+	let provider_data = get_provider_data(&provider_name, data.clone()).await?;
 
 	// 4. Get chat history
 	let messages = get_messages(&chat_id, data.clone()).await.map_err(|e| e.to_string())?;
 
 	// 5. Create LLM provider and get response
-	let llm = Provider::new(&provider_name, &api_key).map_err(|e| format!("Failed to create provider: {}", e))?;
+	let llm = Provider::from_provider_data(
+		&provider_data.provider_name,
+		&provider_data.api_key,
+		provider_data.base_url.as_deref(),
+		provider_data.api_scheme.as_deref(),
+	).map_err(|e| format!("Failed to create provider: {}", e))?;
 
 	let llm_config = LLMConfig::default();
 	let answer = get_llm_response(&llm, &messages, &model_name, &llm_config).await;
