@@ -37,13 +37,13 @@
 			
 			// This message's top is above the viewport - scroll to it
 			if (topRelative < -threshold) {
-				el.scrollIntoView({ behavior: 'instant', block: 'start' })
+				el.scrollIntoView({ behavior: 'smooth', block: 'start' })
 				return
 			}
 		}
 		
 		// No message above, scroll to very top
-		messagesContainer.scrollTo({ top: 0, behavior: 'instant' })
+		messagesContainer.scrollTo({ top: 0, behavior: 'smooth' })
 	}
 	
 	export function scrollToNextMessage() {
@@ -61,13 +61,13 @@
 			
 			// This message's top is below the viewport top - scroll to it
 			if (topRelative > threshold) {
-				el.scrollIntoView({ behavior: 'instant', block: 'start' })
+				el.scrollIntoView({ behavior: 'smooth', block: 'start' })
 				return
 			}
 		}
 		
 		// No message below, scroll to very bottom
-		messagesContainer.scrollTo({ top: messagesContainer.scrollHeight, behavior: 'instant' })
+		messagesContainer.scrollTo({ top: messagesContainer.scrollHeight, behavior: 'smooth' })
 	}
 </script>
 
