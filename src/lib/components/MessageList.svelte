@@ -103,7 +103,6 @@
 			</div>
 		{:else}
 			<div class="flex flex-col">
-				<div class="p-2"></div>
 				{#each messages as message, i}
 					<div data-message={i} class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-1">
 						<MessageItem {message} {selectedModel} />
