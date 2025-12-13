@@ -132,9 +132,9 @@
 
 	async function newChat() {
 		newChatId = uuidv4()
-		chatInputComponent?.focus()
 		selectedChatId = newChatId
 		currentChatMessages = unwrap(await c.loadChat(selectedChatId))
+		chatInputComponent?.focus()
 	}
 
 	async function loadChat(chatId: string) {

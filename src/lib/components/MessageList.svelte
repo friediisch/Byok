@@ -9,12 +9,6 @@
 	export let cmdHeld: boolean = false
 	
 	let messagesContainer: HTMLElement
-	let messageElements: HTMLElement[] = []
-	
-	// Reset message elements when messages change
-	$: if (messages) {
-		messageElements = []
-	}
 	
 	export async function scrollToBottom() {
 		await new Promise((resolve) => setTimeout(resolve))
@@ -23,28 +17,32 @@
 		}
 	}
 	
+	function getMessageElements(): HTMLElement[] {
+		if (!messagesContainer) return []
+		return Array.from(messagesContainer.querySelectorAll('[data-message]'))
+	}
+
 	export function scrollToPreviousMessage() {
 		if (messages.length === 0 || isNewChat || !messagesContainer) return
 		
 		const containerRect = messagesContainer.getBoundingClientRect()
-		const threshold = 5 // pixels tolerance for "aligned with top"
+		const threshold = 5
+		const messageElements = getMessageElements()
 		
-		// Find the message whose top is just above the container's visible top
+		// Find the last message whose top is above the viewport top (scrolled off)
 		for (let i = messageElements.length - 1; i >= 0; i--) {
 			const el = messageElements[i]
-			if (!el) continue
-			
 			const rect = el.getBoundingClientRect()
-			const topRelativeToContainer = rect.top - containerRect.top
+			const topRelative = rect.top - containerRect.top
 			
-			// Find message whose top is above the viewport (negative relative position)
-			if (topRelativeToContainer < -threshold) {
+			// This message's top is above the viewport - scroll to it
+			if (topRelative < -threshold) {
 				el.scrollIntoView({ behavior: 'instant', block: 'start' })
 				return
 			}
 		}
 		
-		// If no message found above, scroll to the very top
+		// No message above, scroll to very top
 		messagesContainer.scrollTo({ top: 0, behavior: 'instant' })
 	}
 	
@@ -52,24 +50,23 @@
 		if (messages.length === 0 || isNewChat || !messagesContainer) return
 		
 		const containerRect = messagesContainer.getBoundingClientRect()
-		const threshold = 5 // pixels tolerance for "aligned with top"
+		const threshold = 5
+		const messageElements = getMessageElements()
 		
-		// Find the first message whose top is below the container's top (not aligned)
+		// Find the first message whose top is below the viewport top (not yet scrolled to)
 		for (let i = 0; i < messageElements.length; i++) {
 			const el = messageElements[i]
-			if (!el) continue
-			
 			const rect = el.getBoundingClientRect()
-			const topRelativeToContainer = rect.top - containerRect.top
+			const topRelative = rect.top - containerRect.top
 			
-			// Find message whose top is below the viewport top (positive relative position beyond threshold)
-			if (topRelativeToContainer > threshold) {
+			// This message's top is below the viewport top - scroll to it
+			if (topRelative > threshold) {
 				el.scrollIntoView({ behavior: 'instant', block: 'start' })
 				return
 			}
 		}
 		
-		// If no message found below, scroll to the bottom
+		// No message below, scroll to very bottom
 		messagesContainer.scrollTo({ top: messagesContainer.scrollHeight, behavior: 'instant' })
 	}
 </script>
@@ -91,7 +88,7 @@
 		<div class="flex flex-col">
 			<div class="p-2"></div>
 			{#each messages as message, i}
-				<div bind:this={messageElements[i]} class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-1">
+				<div data-message={i} class="grid grid-cols-[auto_minmax(0,1fr)] gap-x-1">
 					<MessageItem {message} {selectedModel} />
 				</div>
 			{/each}
