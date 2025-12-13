@@ -83,13 +83,6 @@ Create a .env file with API keys:
 4. Create a git tag in the format `v#.#.#`
 5. Add release notes to the generated GitHub release and publish it
 
-### Mac App Store Release:
-
-- Full Guide: https://thinkgo.io/post/2023/02/publish_tauri_to_apples_app_store/
-- To release the app, use the provisioning profile from your keychain `Apple Distribution: FRIEDEMANN LEONHARD MANUEL SCHESTAG (UYEQWATXYM)` and copy it into the app bundle under `src-tauri/target/release/bundle/macos/byok.app/Contents/embedded.provisionprofile`
-- App Store Connect: https://appstoreconnect.apple.com/apps/6664399508/distribution/macos/version/inflight
-- Apple Developer Page: https://developer.apple.com/account/resources/profiles/list
-
 ### Acknowledgement
 
 Yoinked the initial code from https://github.com/probablykasper/kadium
