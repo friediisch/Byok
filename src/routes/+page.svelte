@@ -98,6 +98,17 @@
 				loadChat(chats[index].id)
 			}
 		}
+		
+		// Handle Cmd+ArrowUp/ArrowDown for message navigation
+		if (cmdOrCtrl && e.key === 'ArrowUp') {
+			e.preventDefault()
+			messageListComponent?.scrollToPreviousMessage()
+		}
+		
+		if (cmdOrCtrl && e.key === 'ArrowDown') {
+			e.preventDefault()
+			messageListComponent?.scrollToNextMessage()
+		}
 	}
 
 	function keyup(e: KeyboardEvent) {
@@ -205,6 +216,7 @@
 			{selectedModel}
 			{isNewChat}
 			{selectedModelName}
+			{cmdHeld}
 		/>
 		
 		<ChatInput
