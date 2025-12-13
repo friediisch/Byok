@@ -64,7 +64,7 @@
 </script>
 
 <div
-	class="relative block p-2 mx-2 rounded-md group
+	class="relative block py-1.5 px-2 mx-2 rounded-md group
 		{isSelected ? 'bg-gray-600' : 'hover:bg-gray-800'}"
 	on:mousedown={handleSelect}
 	role="button"
@@ -82,7 +82,7 @@
 			class="block p-2 mx-2 animate-ping rounded-full self-center self-middle size-4 bg-white opacity-100"
 		></div>
 	{:else}
-		<div class="flex flex-row justify-between">
+		<div class="flex flex-row justify-between items-center gap-2">
 			{#if isRenaming}
 				<textarea
 					class="flex flex-grow p-2 bg-gray-600 rounded-md"
@@ -95,7 +95,7 @@
 				></textarea>
 			{:else}
 				<div
-					class="flex flex-grow break-all"
+					class="flex-1 truncate text-sm"
 					on:mousedown={() => showContextMenu = false}
 					role="button"
 					aria-pressed="false"
@@ -109,6 +109,7 @@
 				role="button"
 				aria-pressed="false"
 				tabindex="0"
+				class="flex-shrink-0"
 			>
 				<Icon
 					icon="mdi:dots-horizontal"
