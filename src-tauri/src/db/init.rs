@@ -17,7 +17,7 @@ lazy_static! {
 	pub static ref DEFAULT_MODELS: Vec<Model> = vec![
 		Model {
 			provider_name: "openai".to_string(),
-			model_name: "chatgpt-4o-latest".to_string(),
+			model_name: "gpt-5.1-2025-11-13".to_string(),
 			model_display_name: "ChatGPT".to_string(),
 			show: true,
 			max_tokens: 16384,
@@ -25,7 +25,7 @@ lazy_static! {
 		},
 		Model {
 			provider_name: "anthropic".to_string(),
-			model_name: "claude-3-5-sonnet-latest".to_string(),
+			model_name: "claude-opus-4-5-20251101".to_string(),
 			model_display_name: "Claude".to_string(),
 			show: true,
 			max_tokens: 8192,

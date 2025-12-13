@@ -50,11 +50,7 @@ pub enum Provider {
 	Groq { api_key: String },
 	Mistral { api_key: String },
 	Ollama { base_url: Option<String> },
-	Custom {
-		api_key: String,
-		base_url: String,
-		api_scheme: ApiScheme,
-	},
+	Custom { api_key: String, base_url: String, api_scheme: ApiScheme },
 }
 
 impl Provider {
@@ -73,8 +69,7 @@ impl Provider {
 
 	/// Create a custom provider with a specified API scheme and base URL
 	pub fn new_custom(api_key: &str, base_url: &str, api_scheme: &str) -> Result<Self> {
-		let scheme = ApiScheme::from_str(api_scheme)
-			.ok_or_else(|| anyhow!("Unsupported API scheme: {}", api_scheme))?;
+		let scheme = ApiScheme::from_str(api_scheme).ok_or_else(|| anyhow!("Unsupported API scheme: {}", api_scheme))?;
 		Ok(Self::Custom {
 			api_key: api_key.to_string(),
 			base_url: base_url.to_string(),
@@ -149,9 +144,7 @@ impl Provider {
 					b
 				}
 			}
-			Provider::Custom { api_key, base_url, api_scheme } => {
-				builder.backend(api_scheme.to_backend()).api_key(api_key).base_url(base_url)
-			}
+			Provider::Custom { api_key, base_url, api_scheme } => builder.backend(api_scheme.to_backend()).api_key(api_key).base_url(base_url),
 		};
 
 		// Apply common configuration
