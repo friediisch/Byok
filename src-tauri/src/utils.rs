@@ -112,6 +112,7 @@ fn capitalize_first_letter(word: &str) -> String {
 fn process_text(mut text: String) -> String {
 	text = escape_html_tags(text);
 	text = replace_backticks_with_span(text);
+	text = replace_markdown_tables_with_html(&text);
 	text = replace_markdown_headers_with_html(&text);
 	text = replace_linebreaks_with_br(text);
 	text = replace_bold_with_html(text);
@@ -182,4 +183,95 @@ pub fn escape_html_tags(input: String) -> String {
 	let re = Regex::new(r"<([^<>]+)>").unwrap();
 	let escaped = re.replace_all(&input, "&lt;$1&gt;");
 	escaped.to_string()
+}
+
+fn replace_markdown_tables_with_html(text: &str) -> String {
+	let lines: Vec<&str> = text.lines().collect();
+	let mut result = String::new();
+	let mut i = 0;
+
+	while i < lines.len() {
+		// Check if this could be the start of a table (line with |)
+		if lines[i].contains('|') && i + 1 < lines.len() {
+			// Check if next line is a separator line (contains | and -)
+			let next_line = lines[i + 1];
+			if next_line.contains('|') && next_line.contains('-') && is_table_separator(next_line) {
+				// This is a table! Parse it
+				let mut table_lines = vec![lines[i]];
+				let mut j = i + 1;
+
+				// Collect all table lines
+				while j < lines.len() && lines[j].contains('|') {
+					table_lines.push(lines[j]);
+					j += 1;
+				}
+
+				// Convert to HTML table
+				result.push_str(&render_markdown_table(&table_lines));
+				result.push('\n');
+				i = j;
+				continue;
+			}
+		}
+
+		result.push_str(lines[i]);
+		result.push('\n');
+		i += 1;
+	}
+
+	// Remove trailing newline if original didn't have one
+	if !text.ends_with('\n') && result.ends_with('\n') {
+		result.pop();
+	}
+
+	result
+}
+
+fn is_table_separator(line: &str) -> bool {
+	// A separator line should only contain |, -, :, and whitespace
+	let trimmed = line.trim();
+	if !trimmed.starts_with('|') && !trimmed.ends_with('|') {
+		return false;
+	}
+
+	for c in trimmed.chars() {
+		if c != '|' && c != '-' && c != ':' && !c.is_whitespace() {
+			return false;
+		}
+	}
+
+	// Must contain at least one -
+	trimmed.contains('-')
+}
+
+fn render_markdown_table(lines: &[&str]) -> String {
+	let mut html = String::from("<table class=\"border-collapse my-2 text-sm\">");
+
+	for (idx, line) in lines.iter().enumerate() {
+		// Skip the separator line (index 1)
+		if idx == 1 {
+			continue;
+		}
+
+		let cells: Vec<&str> = line.trim().trim_matches('|').split('|').map(|s| s.trim()).collect();
+
+		if idx == 0 {
+			// Header row
+			html.push_str("<thead><tr>");
+			for cell in &cells {
+				html.push_str(&format!("<th class=\"border border-gray-600 px-3 py-1 font-bold bg-gray-700\">{}</th>", cell));
+			}
+			html.push_str("</tr></thead><tbody>");
+		} else {
+			// Body row
+			html.push_str("<tr>");
+			for cell in &cells {
+				html.push_str(&format!("<td class=\"border border-gray-600 px-3 py-1\">{}</td>", cell));
+			}
+			html.push_str("</tr>");
+		}
+	}
+
+	html.push_str("</tbody></table>");
+	html
 }
